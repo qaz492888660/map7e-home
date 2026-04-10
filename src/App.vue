@@ -5,10 +5,9 @@
   <Background @loadComplete="loadComplete" />
   <!-- 主界面 -->
   <Transition name="fade" mode="out-in">
-    <main id="main" :class="{ 'previewing-bg': store.backgroundShow }" v-if="store.imgLoadStatus">
-      <div class="preview-curtain preview-curtain-left" :class="{ active: store.backgroundShow }" />
-      <div class="preview-curtain preview-curtain-right" :class="{ active: store.backgroundShow }" />
-      <div class="container" :class="{ hidden: store.backgroundShow }">
+    <main id="main" :class="{ 'previewing-bg': previewActive }" v-if="store.imgLoadStatus">
+      <div class="preview-overlay" :class="{ active: previewActive }" />
+      <div class="container" :class="{ hidden: previewContentHidden }">
         <section class="all" v-show="!store.setOpenState">
           <MainLeft />
           <MainRight v-show="!store.boxOpenState" />
@@ -22,20 +21,20 @@
       <Icon
         class="menu"
         size="24"
-        :class="{ hidden: store.backgroundShow }"
+        :class="{ hidden: previewContentHidden }"
         @click="store.mobileOpenState = !store.mobileOpenState"
       >
         <component :is="store.mobileOpenState ? CloseSmall : HamburgerButton" />
       </Icon>
       <!-- 页脚 -->
       <Transition name="fade" mode="out-in">
-        <Footer :class="{ hidden: store.backgroundShow || store.setOpenState }" />
+        <Footer :class="{ hidden: previewContentHidden || store.setOpenState }" />
       </Transition>
       <button
         class="bg-glow-trigger"
-        :class="{ hidden: store.backgroundShow }"
+        :class="{ active: previewActive }"
         type="button"
-        aria-label="暂时只看背景"
+        aria-label="切换背景预览"
         @click="previewBackground"
       />
     </main>
@@ -57,7 +56,10 @@ import cursorInit from "@/utils/cursor.js";
 import config from "@/../package.json";
 
 const store = mainStore();
-let backgroundPreviewTimer = null;
+let backgroundRevealTimer = null;
+let backgroundFadeTimer = null;
+const previewActive = ref(false);
+const previewContentHidden = ref(false);
 
 // 页面宽度
 const getWidth = () => {
@@ -85,15 +87,29 @@ watch(
 );
 
 const previewBackground = () => {
-  if (backgroundPreviewTimer) {
-    clearTimeout(backgroundPreviewTimer);
-    backgroundPreviewTimer = null;
+  if (backgroundRevealTimer) {
+    clearTimeout(backgroundRevealTimer);
+    backgroundRevealTimer = null;
   }
-  store.backgroundShow = true;
-  backgroundPreviewTimer = setTimeout(() => {
+  if (backgroundFadeTimer) {
+    clearTimeout(backgroundFadeTimer);
+    backgroundFadeTimer = null;
+  }
+  if (previewActive.value) {
+    previewContentHidden.value = false;
     store.backgroundShow = false;
-    backgroundPreviewTimer = null;
-  }, 3200);
+    previewActive.value = false;
+    return;
+  }
+  previewActive.value = true;
+  backgroundFadeTimer = setTimeout(() => {
+    previewContentHidden.value = true;
+    backgroundFadeTimer = null;
+  }, 120);
+  backgroundRevealTimer = setTimeout(() => {
+    store.backgroundShow = true;
+    backgroundRevealTimer = null;
+  }, 900);
 };
 
 onMounted(() => {
@@ -142,8 +158,11 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  if (backgroundPreviewTimer) {
-    clearTimeout(backgroundPreviewTimer);
+  if (backgroundRevealTimer) {
+    clearTimeout(backgroundRevealTimer);
+  }
+  if (backgroundFadeTimer) {
+    clearTimeout(backgroundFadeTimer);
   }
   window.removeEventListener("resize", getWidth);
 });
@@ -254,10 +273,14 @@ onBeforeUnmount(() => {
       transform 0.25s ease,
       opacity 1s ease,
       filter 1s ease;
-    &.hidden {
-      opacity: 0;
-      filter: blur(6px);
-      pointer-events: none;
+    box-shadow:
+      0 0 10px rgba(255, 214, 120, 0.75),
+      0 0 22px rgba(255, 186, 87, 0.45);
+    &.active {
+      opacity: 0.92;
+      box-shadow:
+        0 0 14px rgba(255, 235, 166, 0.95),
+        0 0 30px rgba(255, 203, 110, 0.58);
     }
     &:hover {
       transform: translateX(-50%) scale(1.15);
@@ -269,38 +292,17 @@ onBeforeUnmount(() => {
       bottom: 92px;
     }
   }
-  .preview-curtain {
+  .preview-overlay {
     position: fixed;
-    top: 0;
-    bottom: 0;
-    width: 50vw;
+    inset: 0;
     z-index: 3;
     pointer-events: none;
     opacity: 0;
     backdrop-filter: blur(10px);
-    background: linear-gradient(90deg, rgba(18, 14, 30, 0.22) 0%, rgba(18, 14, 30, 0.06) 100%);
+    background:
+      radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 26%, rgba(18, 14, 30, 0.08) 58%, rgba(18, 14, 30, 0.02) 100%);
     &.active {
-      opacity: 1;
-      animation-duration: 2.35s;
-      animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
-      animation-fill-mode: forwards;
-    }
-  }
-  .preview-curtain-left {
-    left: 0;
-    transform-origin: left center;
-    clip-path: inset(0 0 0 0);
-    &.active {
-      animation-name: preview-split-left;
-    }
-  }
-  .preview-curtain-right {
-    right: 0;
-    transform-origin: right center;
-    clip-path: inset(0 0 0 0);
-    background: linear-gradient(270deg, rgba(18, 14, 30, 0.22) 0%, rgba(18, 14, 30, 0.06) 100%);
-    &.active {
-      animation-name: preview-split-right;
+      animation: preview-overlay-fade 2.1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
     }
   }
 }
@@ -321,33 +323,18 @@ onBeforeUnmount(() => {
   }
 }
 
-@keyframes preview-split-left {
+@keyframes preview-overlay-fade {
   0% {
     opacity: 0;
-    transform: translateX(0);
+    transform: scale(1.015);
   }
-  28% {
-    opacity: 0.96;
-    transform: translateX(0);
+  35% {
+    opacity: 0.92;
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes preview-split-right {
-  0% {
-    opacity: 0;
-    transform: translateX(0);
-  }
-  28% {
-    opacity: 0.96;
-    transform: translateX(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(100%);
+    transform: scale(0.995);
   }
 }
 </style>
