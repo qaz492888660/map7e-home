@@ -255,14 +255,15 @@ onBeforeUnmount(() => {
     position: fixed;
     left: 50%;
     bottom: 112px;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border: 0;
     border-radius: 999px;
     padding: 0;
     z-index: 4;
     cursor: pointer;
     transform: translateX(-50%);
+    isolation: isolate;
     background:
       radial-gradient(circle, rgba(255, 248, 214, 0.95) 0%, rgba(255, 209, 96, 0.9) 38%, rgba(255, 180, 76, 0.18) 68%, rgba(255, 180, 76, 0) 100%);
     box-shadow:
@@ -272,15 +273,33 @@ onBeforeUnmount(() => {
     transition:
       transform 0.25s ease,
       opacity 1s ease,
-      filter 1s ease;
-    box-shadow:
-      0 0 10px rgba(255, 214, 120, 0.75),
-      0 0 22px rgba(255, 186, 87, 0.45);
+      filter 1s ease,
+      width 0.35s ease,
+      height 0.35s ease,
+      border-color 0.35s ease;
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 999px;
+      background: rgba(255, 248, 214, 0.96);
+      box-shadow: 0 0 8px rgba(255, 230, 154, 0.7);
+    }
     &.active {
-      opacity: 0.92;
+      width: 24px;
+      height: 24px;
+      opacity: 1;
+      border: 2px solid rgba(255, 247, 214, 0.9);
+      background: rgba(24, 18, 34, 0.2);
       box-shadow:
-        0 0 14px rgba(255, 235, 166, 0.95),
-        0 0 30px rgba(255, 203, 110, 0.58);
+        0 0 18px rgba(255, 236, 173, 0.95),
+        0 0 36px rgba(255, 210, 120, 0.72),
+        0 0 0 6px rgba(255, 231, 168, 0.12);
+      &::after {
+        inset: 5px;
+        background: rgba(255, 250, 232, 0.98);
+        box-shadow: 0 0 12px rgba(255, 239, 183, 0.95);
+      }
     }
     &:hover {
       transform: translateX(-50%) scale(1.15);
