@@ -1,22 +1,24 @@
 <template>
-  <!-- 基本信息 -->
   <div class="message">
-    <!-- Logo -->
     <div class="logo">
       <img class="logo-img" :src="siteLogo" alt="logo" />
-      <div :class="{ name: true, 'text-hidden': true, long: siteUrl[0].length >= 6 }">
-        <span class="bg">{{ siteUrl[0] }}</span>
-        <span class="sm">.{{ siteUrl[1] }}</span>
-      </div>
     </div>
-    <!-- 简介 -->
     <div class="description cards" @click="changeBox">
       <div class="content">
         <Icon size="16">
           <QuoteLeft />
         </Icon>
         <div class="text">
-          <p>{{ motto }}</p>
+          <p class="motto-line">
+            <span
+              v-for="(char, index) in mottoChars"
+              :key="`${char}-${index}`"
+              class="motto-char"
+              :class="{ visible: index < visibleCount }"
+            >
+              {{ char === " " ? "\u00A0" : char }}
+            </span>
+          </p>
         </div>
         <Icon size="16">
           <QuoteRight />
@@ -31,23 +33,18 @@ import { Icon } from "@vicons/utils";
 import { QuoteLeft, QuoteRight } from "@vicons/fa";
 import { Error } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
-import siteLogo from "@/assets/images/maple.png";
+import siteLogo from "@/assets/images/map7e.jpg";
+
 const store = mainStore();
+const motto = "须知少年擎云志，曾许人间第一流";
+const mottoChars = Array.from(motto);
+const visibleCount = ref(0);
+const openingDelayMs = 1600;
+const charStepMs = 180;
+const loopGapMs = 10000;
+let revealTimer = null;
+let loopTimer = null;
 
-const motto = "须知少年拏云志，曾许人间第一流";
-// 站点链接
-const siteUrl = computed(() => {
-  const url = import.meta.env.VITE_SITE_URL;
-  if (!url) return "imsyy.top".split(".");
-  // 判断协议前缀
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    const urlFormat = url.replace(/^(https?:\/\/)/, "");
-    return urlFormat.split(".");
-  }
-  return url.split(".");
-});
-
-// 切换右侧功能区
 const changeBox = () => {
   if (store.getInnerWidth >= 990) {
     store.boxOpenState = !store.boxOpenState;
@@ -62,47 +59,68 @@ const changeBox = () => {
     });
   }
 };
+
+const clearMottoTimers = () => {
+  if (revealTimer) {
+    clearInterval(revealTimer);
+    revealTimer = null;
+  }
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
+  }
+};
+
+const startMottoLoop = () => {
+  clearMottoTimers();
+  visibleCount.value = 0;
+  loopTimer = setTimeout(() => {
+    revealTimer = setInterval(() => {
+      if (visibleCount.value >= mottoChars.length) {
+        clearInterval(revealTimer);
+        revealTimer = null;
+        loopTimer = setTimeout(startMottoLoop, loopGapMs);
+        return;
+      }
+      visibleCount.value += 1;
+    }, charStepMs);
+  }, openingDelayMs);
+};
+
+onMounted(() => {
+  startMottoLoop();
+});
+
+onBeforeUnmount(() => {
+  clearMottoTimers();
+});
 </script>
 
 <style lang="scss" scoped>
 .message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
   .logo {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
     animation: fade 0.5s;
+    width: 100%;
     max-width: 460px;
+    display: flex;
+    justify-content: center;
+
     .logo-img {
-      border-radius: 50%;
-      width: 120px;
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 28px;
+      display: block;
     }
-    .name {
-      width: 100%;
-      padding-left: 22px;
-      transform: translateY(-8px);
-      font-family: "Pacifico-Regular";
 
-      .bg {
-        font-size: 5rem;
-      }
-
-      .sm {
-        margin-left: 6px;
-        font-size: 2rem;
-        @media (min-width: 720px) and (max-width: 789px) {
-          display: none;
-        }
-      }
-    }
     @media (max-width: 768px) {
       .logo-img {
-        width: 100px;
-      }
-      .name {
-        height: 128px;
-        .bg {
-          font-size: 4.5rem;
-        }
+        width: 180px;
+        height: 180px;
       }
     }
 
@@ -114,6 +132,7 @@ const changeBox = () => {
   .description {
     padding: 1rem;
     margin-top: 3.5rem;
+    width: 100%;
     max-width: 460px;
     animation: fade 0.5s;
 
@@ -126,10 +145,24 @@ const changeBox = () => {
         line-height: 2rem;
         margin-right: auto;
 
-        p {
-          &:nth-of-type(1) {
-            font-family: "Pacifico-Regular";
-          }
+        .motto-line {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.02em;
+          font-family: "Pacifico-Regular";
+        }
+
+        .motto-char {
+          opacity: 0;
+          transform: translateY(8px);
+          transition:
+            opacity 0.35s ease,
+            transform 0.35s ease;
+        }
+
+        .motto-char.visible {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
 
@@ -137,30 +170,22 @@ const changeBox = () => {
         align-self: flex-end;
       }
     }
+
     @media (max-width: 720px) {
       max-width: 100%;
       pointer-events: none;
     }
   }
+
   @media (max-width: 390px) {
     .logo {
-      flex-direction: column;
       .logo-img {
-        display: none;
-      }
-      .name {
-        margin-left: 0;
-        height: auto;
-        transform: none;
-        text-align: center;
-        .bg {
-          font-size: 3.5rem;
-        }
-        .sm {
-          font-size: 1.4rem;
-        }
+        width: 150px;
+        height: 150px;
+        border-radius: 22px;
       }
     }
+
     .description {
       margin-top: 2.5rem;
     }

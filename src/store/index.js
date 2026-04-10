@@ -72,16 +72,4 @@ export const mainStore = defineStore("main", {
       this.imgLoadStatus = value;
     },
   },
-  persist: {
-    key: "data",
-    storage: window.localStorage,
-    paths: [
-      "coverType",
-      "musicVolume",
-      "siteStartShow",
-      "musicClick",
-      "playerLrcShow",
-      "footerBlur",
-    ],
-  },
 });

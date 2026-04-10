@@ -12,16 +12,6 @@
       />
     </div>
     <div :class="store.backgroundShow ? 'gray hidden' : 'gray'" />
-    <Transition name="fade" mode="out-in">
-      <a
-        v-if="store.backgroundShow && store.coverType != '3'"
-        class="down"
-        :href="bgUrl"
-        target="_blank"
-      >
-        下载壁纸
-      </a>
-    </Transition>
   </div>
 </template>
 
@@ -181,34 +171,6 @@ onBeforeUnmount(() => {
     &.hidden {
       opacity: 0;
       transition: 1.5s;
-    }
-  }
-
-  .down {
-    font-size: 16px;
-    color: white;
-    position: absolute;
-    bottom: 30px;
-    left: 0;
-    right: 0;
-    margin: 0 auto;
-    display: block;
-    padding: 20px 26px;
-    border-radius: 8px;
-    background-color: #00000030;
-    width: 120px;
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    &:hover {
-      transform: scale(1.05);
-      background-color: #00000060;
-    }
-
-    &:active {
-      transform: scale(1);
     }
   }
 }

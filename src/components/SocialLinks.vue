@@ -28,11 +28,12 @@ const socialTip = ref("通过这里联系我吧");
 .social {
   margin-top: 1rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   max-width: 460px;
   width: 100%;
-  height: 42px;
+  gap: 0.5rem;
   background-color: transparent;
   border-radius: 6px;
   backdrop-filter: blur(0);
@@ -56,6 +57,7 @@ const socialTip = ref("通过这里联系我吧");
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     a {
       display: inherit;
       .icon {
@@ -72,7 +74,6 @@ const socialTip = ref("通过这里联系我吧");
   }
   .tip {
     display: none;
-    margin-right: 12px;
     animation: fade 0.5s;
   }
   @media (min-width: 768px) {
