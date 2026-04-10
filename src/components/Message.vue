@@ -16,8 +16,7 @@
           <QuoteLeft />
         </Icon>
         <div class="text">
-          <p>{{ descriptionText.hello }}</p>
-          <p>{{ descriptionText.text }}</p>
+          <p>{{ motto }}</p>
         </div>
         <Icon size="16">
           <QuoteRight />
@@ -32,10 +31,10 @@ import { Icon } from "@vicons/utils";
 import { QuoteLeft, QuoteRight } from "@vicons/fa";
 import { Error } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
+import siteLogo from "@/assets/images/maple.png";
 const store = mainStore();
 
-// 主页站点logo
-const siteLogo = import.meta.env.VITE_SITE_MAIN_LOGO;
+const motto = "须知少年拏云志，曾许人间第一流";
 // 站点链接
 const siteUrl = computed(() => {
   const url = import.meta.env.VITE_SITE_URL;
@@ -46,12 +45,6 @@ const siteUrl = computed(() => {
     return urlFormat.split(".");
   }
   return url.split(".");
-});
-
-// 简介区域文字
-const descriptionText = reactive({
-  hello: import.meta.env.VITE_DESC_HELLO,
-  text: import.meta.env.VITE_DESC_TEXT,
 });
 
 // 切换右侧功能区
@@ -69,20 +62,6 @@ const changeBox = () => {
     });
   }
 };
-
-// 监听状态变化
-watch(
-  () => store.boxOpenState,
-  (value) => {
-    if (value) {
-      descriptionText.hello = import.meta.env.VITE_DESC_HELLO_OTHER;
-      descriptionText.text = import.meta.env.VITE_DESC_TEXT_OTHER;
-    } else {
-      descriptionText.hello = import.meta.env.VITE_DESC_HELLO;
-      descriptionText.text = import.meta.env.VITE_DESC_TEXT;
-    }
-  },
-);
 </script>
 
 <style lang="scss" scoped>
