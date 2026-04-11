@@ -41,7 +41,7 @@
 
 <script setup>
 import { Icon } from "@vicons/utils";
-import { Link, Blog, CompactDisc, Cloud, Compass } from "@vicons/fa";
+import { Link, Blog, CompactDisc, Cloud, Compass, LaptopCode } from "@vicons/fa";
 import { mainStore } from "@/store";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Pagination, Mousewheel } from "swiper";
@@ -50,8 +50,8 @@ import "swiper/scss";
 import "swiper/scss/pagination";
 
 const store = mainStore();
-const itemsPerPage = computed(() => (siteLinks.length <= 4 ? 4 : 6));
-const itemsPerRow = computed(() => (siteLinks.length <= 4 ? 2 : 3));
+const itemsPerPage = computed(() => 4);
+const itemsPerRow = computed(() => 2);
 const columnSpan = computed(() => 24 / itemsPerRow.value);
 
 const siteLinksList = computed(() => {
@@ -67,9 +67,17 @@ const siteIcon = {
   Cloud,
   CompactDisc,
   Compass,
+  LaptopCode,
 };
 
 const jumpLink = (data) => {
+  if (!data.link) {
+    ElMessage({
+      message: "站点监测即将上线",
+      grouping: true,
+    });
+    return;
+  }
   if (data.name === "音乐" && store.musicClick) {
     if (typeof $openList === "function") $openList();
   } else {

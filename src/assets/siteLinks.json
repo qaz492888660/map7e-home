@@ -18,5 +18,10 @@
     "icon": "Compass",
     "name": "起始页",
     "link": "https://www.map7e.com/"
+  },
+  {
+    "icon": "LaptopCode",
+    "name": "站点监测",
+    "link": ""
   }
 ]
