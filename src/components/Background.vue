@@ -19,9 +19,31 @@ import { Error } from "@icon-park/vue-next";
 const store = mainStore();
 const bgUrl = ref(null);
 const imgTimeout = ref(null);
+const bgShiftX = ref("0px");
+const mouseOffsetRatio = ref(0);
+let frameId = 0;
+let currentOffsetRatio = 0;
 const emit = defineEmits(["loadComplete"]);
 
 const localSceneBg = "/images/background-kame-8k.png";
+const MAX_SHIFT = 32;
+
+const updateBackgroundShift = () => {
+  currentOffsetRatio += (mouseOffsetRatio.value - currentOffsetRatio) * 0.08;
+  const offset = currentOffsetRatio * MAX_SHIFT;
+  bgShiftX.value = `${offset.toFixed(2)}px`;
+  frameId = window.requestAnimationFrame(updateBackgroundShift);
+};
+
+const handleMouseMove = (event) => {
+  const viewportWidth = window.innerWidth || 1;
+  const ratio = event.clientX / viewportWidth;
+  mouseOffsetRatio.value = (ratio - 0.5) * 2;
+};
+
+const resetMouseShift = () => {
+  mouseOffsetRatio.value = 0;
+};
 
 const changeBg = (type) => {
   if (type == 0) {
@@ -58,10 +80,16 @@ const imgLoadError = () => {
 
 onMounted(() => {
   changeBg(store.coverType);
+  window.addEventListener("mousemove", handleMouseMove, { passive: true });
+  window.addEventListener("mouseleave", resetMouseShift);
+  updateBackgroundShift();
 });
 
 onBeforeUnmount(() => {
   clearTimeout(imgTimeout.value);
+  window.removeEventListener("mousemove", handleMouseMove);
+  window.removeEventListener("mouseleave", resetMouseShift);
+  window.cancelAnimationFrame(frameId);
 });
 </script>
 
@@ -82,14 +110,17 @@ onBeforeUnmount(() => {
 
   .bg {
     position: absolute;
-    inset: 0;
-    width: 100%;
+    top: 0;
+    left: -32px;
+    width: calc(100% + 64px);
     height: 100%;
     object-fit: cover;
     object-position: center center;
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
     backface-visibility: visible;
+    transform: translate3d(v-bind(bgShiftX), 0, 0);
+    will-change: transform;
     filter: none;
     animation: fade 0.9s ease forwards;
   }

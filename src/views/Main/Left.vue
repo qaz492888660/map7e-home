@@ -14,10 +14,12 @@ const store = mainStore();
 
 <style lang="scss" scoped>
 .left {
-  // flex: 1 0 0%;
-  width: 50%;
+  width: min(100%, 460px);
   margin-right: 10px;
   transform: translateY(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   &.hidden {
     display: none;
   }

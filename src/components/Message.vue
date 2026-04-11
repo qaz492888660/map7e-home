@@ -109,7 +109,6 @@ onBeforeUnmount(() => {
   .logo {
     animation: fade 0.5s;
     width: 100%;
-    max-width: 460px;
     display: flex;
     justify-content: center;
 
@@ -137,7 +136,6 @@ onBeforeUnmount(() => {
     padding: 1rem;
     margin-top: 3.5rem;
     width: 100%;
-    max-width: 460px;
     animation: fade 0.5s;
 
     .content {
@@ -176,7 +174,6 @@ onBeforeUnmount(() => {
     }
 
     @media (max-width: 720px) {
-      max-width: 100%;
       pointer-events: none;
     }
   }

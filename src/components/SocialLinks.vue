@@ -31,18 +31,14 @@ const socialTip = ref("通过这里联系我吧");
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  max-width: 460px;
   width: 100%;
+  padding: 1rem;
   gap: 0.5rem;
   background-color: transparent;
   border-radius: 6px;
   backdrop-filter: none;
   animation: fade 0.5s;
-  transition:
-    background-color 0.3s,
-    backdrop-filter 0.3s;
   @media (max-width: 840px) {
-    max-width: 100%;
     justify-content: center;
     .link {
       justify-content: space-evenly !important;
@@ -58,6 +54,7 @@ const socialTip = ref("通过这里联系我吧");
     align-items: center;
     justify-content: center;
     width: 100%;
+    min-height: 32px;
     a {
       display: inherit;
       .icon {
@@ -78,7 +75,7 @@ const socialTip = ref("通过这里联系我吧");
   }
   @media (min-width: 768px) {
     &:hover {
-      background-color: #00000040;
+      background-color: transparent;
       backdrop-filter: none;
       .tip {
         display: block;
