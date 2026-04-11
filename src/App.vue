@@ -254,21 +254,22 @@ onBeforeUnmount(() => {
   .bg-glow-trigger {
     position: fixed;
     left: 50%;
-    bottom: 112px;
-    width: 16px;
-    height: 16px;
-    border: 0;
+    bottom: 104px;
+    width: 28px;
+    height: 28px;
+    border: 2px solid rgba(255, 246, 214, 0.68);
     border-radius: 999px;
     padding: 0;
     z-index: 4;
     cursor: pointer;
     transform: translateX(-50%);
     isolation: isolate;
-    background:
-      radial-gradient(circle, rgba(255, 248, 214, 0.95) 0%, rgba(255, 209, 96, 0.9) 38%, rgba(255, 180, 76, 0.18) 68%, rgba(255, 180, 76, 0) 100%);
+    background: rgba(21, 16, 30, 0.24);
+    backdrop-filter: blur(12px);
     box-shadow:
-      0 0 10px rgba(255, 214, 120, 0.75),
-      0 0 22px rgba(255, 186, 87, 0.45);
+      0 0 0 6px rgba(255, 219, 132, 0.1),
+      0 0 18px rgba(255, 214, 120, 0.42),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     animation: glow-pulse 2.4s ease-in-out infinite;
     transition:
       transform 0.25s ease,
@@ -276,29 +277,30 @@ onBeforeUnmount(() => {
       filter 1s ease,
       width 0.35s ease,
       height 0.35s ease,
-      border-color 0.35s ease;
+      border-color 0.35s ease,
+      background-color 0.35s ease;
     &::after {
       content: "";
       position: absolute;
-      inset: 4px;
+      inset: 6px;
       border-radius: 999px;
       background: rgba(255, 248, 214, 0.96);
-      box-shadow: 0 0 8px rgba(255, 230, 154, 0.7);
+      box-shadow: 0 0 12px rgba(255, 230, 154, 0.9);
     }
     &.active {
-      width: 24px;
-      height: 24px;
+      width: 42px;
+      height: 42px;
       opacity: 1;
-      border: 2px solid rgba(255, 247, 214, 0.9);
-      background: rgba(24, 18, 34, 0.2);
+      border-color: rgba(255, 247, 214, 0.95);
+      background: rgba(17, 12, 25, 0.38);
       box-shadow:
-        0 0 18px rgba(255, 236, 173, 0.95),
-        0 0 36px rgba(255, 210, 120, 0.72),
-        0 0 0 6px rgba(255, 231, 168, 0.12);
+        0 0 0 10px rgba(255, 231, 168, 0.12),
+        0 0 24px rgba(255, 236, 173, 0.95),
+        0 0 44px rgba(255, 210, 120, 0.72);
       &::after {
-        inset: 5px;
+        inset: 10px;
         background: rgba(255, 250, 232, 0.98);
-        box-shadow: 0 0 12px rgba(255, 239, 183, 0.95);
+        box-shadow: 0 0 16px rgba(255, 239, 183, 1);
       }
     }
     &:hover {
@@ -308,7 +310,7 @@ onBeforeUnmount(() => {
       transform: translateX(-50%) scale(0.92);
     }
     @media (max-width: 720px) {
-      bottom: 92px;
+      bottom: 88px;
     }
   }
   .preview-overlay {
