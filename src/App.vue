@@ -36,7 +36,10 @@
         type="button"
         aria-label="切换背景预览"
         @click="previewBackground"
-      />
+      >
+        <span class="bg-glow-core" />
+        <span class="bg-glow-label">{{ previewActive ? "返回主页" : "" }}</span>
+      </button>
     </main>
   </Transition>
 </template>
@@ -173,6 +176,7 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 2;
   width: 100%;
   height: 100%;
   transform: scale(1.2);
@@ -260,7 +264,7 @@ onBeforeUnmount(() => {
     border: 2px solid rgba(255, 246, 214, 0.68);
     border-radius: 999px;
     padding: 0;
-    z-index: 4;
+    z-index: 12;
     cursor: pointer;
     transform: translateX(-50%);
     isolation: isolate;
@@ -275,32 +279,58 @@ onBeforeUnmount(() => {
       transform 0.25s ease,
       opacity 1s ease,
       filter 1s ease,
+      padding 0.35s ease,
+      gap 0.35s ease,
       width 0.35s ease,
       height 0.35s ease,
       border-color 0.35s ease,
       background-color 0.35s ease;
-    &::after {
-      content: "";
-      position: absolute;
-      inset: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    .bg-glow-core {
+      width: 12px;
+      height: 12px;
       border-radius: 999px;
       background: rgba(255, 248, 214, 0.96);
       box-shadow: 0 0 12px rgba(255, 230, 154, 0.9);
     }
+    .bg-glow-label {
+      max-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      color: rgba(255, 248, 226, 0.96);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition:
+        max-width 0.35s ease,
+        opacity 0.25s ease;
+    }
     &.active {
-      width: 42px;
-      height: 42px;
+      width: auto;
+      min-width: 136px;
+      height: 46px;
+      padding: 0 16px 0 12px;
+      gap: 12px;
       opacity: 1;
       border-color: rgba(255, 247, 214, 0.95);
-      background: rgba(17, 12, 25, 0.38);
+      background: rgba(17, 12, 25, 0.8);
       box-shadow:
-        0 0 0 10px rgba(255, 231, 168, 0.12),
-        0 0 24px rgba(255, 236, 173, 0.95),
-        0 0 44px rgba(255, 210, 120, 0.72);
-      &::after {
-        inset: 10px;
+        0 0 0 10px rgba(255, 231, 168, 0.14),
+        0 0 30px rgba(255, 236, 173, 0.98),
+        0 0 60px rgba(255, 210, 120, 0.74);
+      .bg-glow-core {
+        width: 16px;
+        height: 16px;
         background: rgba(255, 250, 232, 0.98);
-        box-shadow: 0 0 16px rgba(255, 239, 183, 1);
+        box-shadow: 0 0 18px rgba(255, 239, 183, 1);
+      }
+      .bg-glow-label {
+        max-width: 110px;
+        opacity: 1;
       }
     }
     &:hover {
@@ -311,6 +341,15 @@ onBeforeUnmount(() => {
     }
     @media (max-width: 720px) {
       bottom: 88px;
+      &.active {
+        min-width: 124px;
+        height: 42px;
+        padding: 0 14px 0 10px;
+        .bg-glow-label {
+          font-size: 13px;
+          max-width: 96px;
+        }
+      }
     }
   }
   .preview-overlay {
