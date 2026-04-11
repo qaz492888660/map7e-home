@@ -73,7 +73,7 @@ const siteIcon = {
 const jumpLink = (data) => {
   if (!data.link) {
     ElMessage({
-      message: "站点监测即将上线",
+      message: "即将上线",
       grouping: true,
     });
     return;
