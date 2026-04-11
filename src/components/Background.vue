@@ -1,17 +1,14 @@
 <template>
   <div :class="store.backgroundShow ? 'cover show' : 'cover'">
-    <div class="bg-layer" :style="bgLayerStyle">
-      <img
-        v-show="store.imgLoadStatus"
-        class="bg"
-        alt="cover"
-        :src="bgUrl"
-        @load="imgLoadComplete"
-        @error.once="imgLoadError"
-        @animationend="imgAnimationEnd"
-      />
-    </div>
-    <div :class="store.backgroundShow ? 'gray hidden' : 'gray'" />
+    <img
+      v-show="store.imgLoadStatus"
+      class="bg"
+      alt="cover"
+      :src="bgUrl"
+      @load="imgLoadComplete"
+      @error.once="imgLoadError"
+      @animationend="imgAnimationEnd"
+    />
   </div>
 </template>
 
@@ -25,48 +22,6 @@ const imgTimeout = ref(null);
 const emit = defineEmits(["loadComplete"]);
 
 const localSceneBg = "/images/background-kame-8k.png";
-const maxShiftX = 8;
-const currentShiftX = ref(0);
-const targetShiftX = ref(0);
-let motionFrame = null;
-
-const bgLayerStyle = computed(() => ({
-  transform: `translate3d(${currentShiftX.value}px, 0, 0) scale(1.01)`,
-}));
-
-const animateMotion = () => {
-  const delta = targetShiftX.value - currentShiftX.value;
-  currentShiftX.value += delta * 0.08;
-
-  if (Math.abs(delta) > 0.1) {
-    motionFrame = requestAnimationFrame(animateMotion);
-    return;
-  }
-
-  currentShiftX.value = targetShiftX.value;
-  motionFrame = null;
-};
-
-const updateMotion = (clientX) => {
-  if (!window.innerWidth) return;
-  const ratio = clientX / window.innerWidth - 0.5;
-  targetShiftX.value = ratio * -2 * maxShiftX;
-
-  if (!motionFrame) {
-    motionFrame = requestAnimationFrame(animateMotion);
-  }
-};
-
-const resetMotion = () => {
-  targetShiftX.value = 0;
-  if (!motionFrame) {
-    motionFrame = requestAnimationFrame(animateMotion);
-  }
-};
-
-const handleMouseMove = (event) => {
-  updateMotion(event.clientX);
-};
 
 const changeBg = (type) => {
   if (type == 0) {
@@ -103,20 +58,10 @@ const imgLoadError = () => {
 
 onMounted(() => {
   changeBg(store.coverType);
-  window.addEventListener("mousemove", handleMouseMove);
-  document.addEventListener("mouseleave", resetMotion);
-  window.addEventListener("blur", resetMotion);
 });
 
 onBeforeUnmount(() => {
   clearTimeout(imgTimeout.value);
-  window.removeEventListener("mousemove", handleMouseMove);
-  document.removeEventListener("mouseleave", resetMotion);
-  window.removeEventListener("blur", resetMotion);
-  if (motionFrame) {
-    cancelAnimationFrame(motionFrame);
-    motionFrame = null;
-  }
 });
 </script>
 
@@ -135,15 +80,6 @@ onBeforeUnmount(() => {
     z-index: 1;
   }
 
-  .bg-layer {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    will-change: transform;
-    transition: transform 0.18s ease-out;
-  }
-
   .bg {
     position: absolute;
     inset: 0;
@@ -151,27 +87,11 @@ onBeforeUnmount(() => {
     height: 100%;
     object-fit: cover;
     object-position: center center;
-    backface-visibility: hidden;
-    filter: brightness(0.96) saturate(1.02) contrast(1.01);
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    backface-visibility: visible;
+    filter: none;
     animation: fade 0.9s ease forwards;
-  }
-
-  .gray {
-    opacity: 1;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-image:
-      radial-gradient(circle at center, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0.16) 100%),
-      linear-gradient(180deg, rgba(24, 18, 46, 0.02) 0%, rgba(24, 18, 46, 0.1) 100%);
-    transition: 1.5s;
-
-    &.hidden {
-      opacity: 0;
-      transition: 1.5s;
-    }
   }
 }
 </style>

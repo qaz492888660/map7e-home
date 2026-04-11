@@ -97,7 +97,7 @@ const siteUrl = computed(() => {
     }
   }
   &.blur {
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     background: rgb(0 0 0 / 25%);
     font-size: 16px;
   }

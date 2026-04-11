@@ -136,7 +136,7 @@ watch(
   width: 100%;
   height: 100%;
   background: #00000040;
-  backdrop-filter: blur(10px);
+  backdrop-filter: none;
   border-radius: 6px;
   padding: 20px;
   display: flex;
@@ -245,7 +245,7 @@ watch(
   width: 100%;
   height: 100%;
   background-color: #00000080;
-  backdrop-filter: blur(20px);
+  backdrop-filter: none;
   z-index: 1;
   .list {
     position: absolute;

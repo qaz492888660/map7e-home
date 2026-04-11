@@ -194,7 +194,7 @@ onBeforeUnmount(() => {
     &.hidden {
       opacity: 0;
       transform: scale(0.968);
-      filter: blur(12px);
+      filter: none;
       pointer-events: none;
     }
     .all {
@@ -213,7 +213,7 @@ onBeforeUnmount(() => {
       width: 100%;
       height: 100%;
       background-color: #00000080;
-      backdrop-filter: blur(20px);
+      backdrop-filter: none;
       z-index: 2;
       animation: fade 0.5s;
     }
@@ -231,7 +231,7 @@ onBeforeUnmount(() => {
     width: 56px;
     height: 34px;
     background: rgb(0 0 0 / 20%);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     border-radius: 6px;
     transition: transform 0.3s;
     animation: fade 0.5s;
@@ -242,7 +242,7 @@ onBeforeUnmount(() => {
     &.hidden {
       opacity: 0;
       transform: translateY(26px) scale(0.93);
-      filter: blur(10px);
+      filter: none;
       pointer-events: none;
     }
     &:active {
@@ -269,7 +269,7 @@ onBeforeUnmount(() => {
     transform: translateX(-50%);
     isolation: isolate;
     background: rgba(21, 16, 30, 0.24);
-    backdrop-filter: blur(12px);
+    backdrop-filter: none;
     box-shadow:
       0 0 0 6px rgba(255, 219, 132, 0.1),
       0 0 18px rgba(255, 214, 120, 0.42),
@@ -358,7 +358,7 @@ onBeforeUnmount(() => {
     z-index: 3;
     pointer-events: none;
     opacity: 0;
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     background:
       radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 26%, rgba(18, 14, 30, 0.08) 58%, rgba(18, 14, 30, 0.02) 100%);
     &.active {
