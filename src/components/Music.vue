@@ -58,6 +58,7 @@
             :songType="playerData.type"
             :songId="playerData.id"
             :volume="volumeNum"
+            :autoplay="true"
             :shuffle="false"
             ref="playerRef"
           />
