@@ -36,12 +36,14 @@ import { mainStore } from "@/store";
 import siteLogo from "@/assets/images/map7e.jpg";
 
 const store = mainStore();
-const motto = "须知少年擎云志，曾许人间第一流";
+const motto = "须知少年拏云志，曾许人间第一流。";
 const mottoChars = Array.from(motto);
 const visibleCount = ref(0);
 const openingDelayMs = 1600;
 const charStepMs = 180;
+const clausePauseMs = 700;
 const loopGapMs = 10000;
+const pauseAfterLength = Array.from("须知少年拏云志，").length;
 let revealTimer = null;
 let loopTimer = null;
 
@@ -62,7 +64,7 @@ const changeBox = () => {
 
 const clearMottoTimers = () => {
   if (revealTimer) {
-    clearInterval(revealTimer);
+    clearTimeout(revealTimer);
     revealTimer = null;
   }
   if (loopTimer) {
@@ -75,15 +77,17 @@ const startMottoLoop = () => {
   clearMottoTimers();
   visibleCount.value = 0;
   loopTimer = setTimeout(() => {
-    revealTimer = setInterval(() => {
+    const revealNextChar = () => {
       if (visibleCount.value >= mottoChars.length) {
-        clearInterval(revealTimer);
         revealTimer = null;
         loopTimer = setTimeout(startMottoLoop, loopGapMs);
         return;
       }
       visibleCount.value += 1;
-    }, charStepMs);
+      const delay = visibleCount.value === pauseAfterLength ? clausePauseMs : charStepMs;
+      revealTimer = setTimeout(revealNextChar, delay);
+    };
+    revealNextChar();
   }, openingDelayMs);
 };
 

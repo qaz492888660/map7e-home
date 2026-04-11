@@ -24,7 +24,7 @@ const bgUrl = ref(null);
 const imgTimeout = ref(null);
 const emit = defineEmits(["loadComplete"]);
 
-const localSceneBg = "/images/background-kame-4k.jpg";
+const localSceneBg = "/images/background-kame-8k.png";
 const maxShiftX = 8;
 const currentShiftX = ref(0);
 const targetShiftX = ref(0);
