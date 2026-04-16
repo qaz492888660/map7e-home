@@ -15,6 +15,7 @@
 <script setup>
 import { mainStore } from "@/store";
 import { Error } from "@icon-park/vue-next";
+import localSceneBg from "@/assets/images/background-kame-4k.jpg";
 
 const store = mainStore();
 const bgUrl = ref(null);
@@ -25,7 +26,6 @@ let frameId = 0;
 let currentOffsetRatio = 0;
 const emit = defineEmits(["loadComplete"]);
 
-const localSceneBg = "/images/background-kame-8k.png";
 const MAX_SHIFT = 32;
 
 const updateBackgroundShift = () => {
