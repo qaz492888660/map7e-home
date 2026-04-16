@@ -34,6 +34,10 @@ const playListCount = ref(0);
 const skipTimeout = ref(null);
 const autoplayArmed = ref(false);
 
+let wasPlaying = false;
+let fadeTimer = null;
+let restoreVolume = 0;
+
 const props = defineProps({
   autoplay: {
     type: Boolean,
@@ -78,6 +82,88 @@ const props = defineProps({
   },
 });
 
+const getAudioEl = () => document.querySelector("audio") || player.value?.audio;
+
+const stopFade = () => {
+  if (fadeTimer) {
+    clearInterval(fadeTimer);
+    fadeTimer = null;
+  }
+};
+
+// fadeOut: 页面隐藏时音量渐弱到 0 后暂停
+const fadeOut = (audio) => {
+  if (!audio) {
+    return;
+  }
+
+  stopFade();
+  restoreVolume = Number.isFinite(audio.volume) ? audio.volume : props.volume;
+  audio.volume = restoreVolume;
+
+  fadeTimer = setInterval(() => {
+    const nextVolume = Math.max(0, Number((audio.volume - 0.05).toFixed(4)));
+    audio.volume = nextVolume;
+
+    if (nextVolume <= 0) {
+      stopFade();
+      audio.pause();
+      audio.volume = 0;
+    }
+  }, 30);
+};
+
+// fadeIn: 页面恢复时从 0 渐入到之前的音量
+const fadeIn = (audio) => {
+  if (!audio) {
+    return;
+  }
+
+  stopFade();
+  const targetVolume = Math.min(1, Math.max(0, restoreVolume || props.volume || 0));
+  audio.volume = 0;
+
+  fadeTimer = setInterval(() => {
+    const nextVolume = Math.min(targetVolume, Number((audio.volume + 0.05).toFixed(4)));
+    audio.volume = nextVolume;
+
+    if (nextVolume >= targetVolume) {
+      stopFade();
+      audio.volume = targetVolume;
+    }
+  }, 30);
+};
+
+const handleVisibilityChange = async () => {
+  const audioEl = getAudioEl();
+  if (!audioEl) {
+    return;
+  }
+
+  stopFade();
+
+  if (document.hidden) {
+    wasPlaying = !audioEl.paused;
+    if (wasPlaying) {
+      fadeOut(audioEl);
+    } else {
+      restoreVolume = Number.isFinite(audioEl.volume) ? audioEl.volume : props.volume;
+    }
+    return;
+  }
+
+  if (wasPlaying) {
+    try {
+      await player.value?.play?.();
+      fadeIn(audioEl);
+    } catch (error) {
+      console.warn("resume playback failed", error);
+    }
+  }
+
+  wasPlaying = false;
+};
+
 const removeAutoplayListeners = () => {
   window.removeEventListener("pointerdown", resumeAutoplay);
   window.removeEventListener("keydown", resumeAutoplay);
@@ -101,6 +187,7 @@ const armAutoplay = () => {
   if (!props.autoplay || !playList.value.length) {
     return;
   }
+
   autoplayArmed.value = true;
   nextTick(() => {
     resumeAutoplay();
@@ -139,6 +226,8 @@ onMounted(() => {
       });
     }
   });
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 
 const onPlay = () => {
@@ -184,11 +273,13 @@ const onSelectSong = (value) => {
 const changeSong = (type) => {
   playIndex.value = player.value.playIndex;
   playIndex.value += type ? 1 : -1;
+
   if (playIndex.value < 0) {
     playIndex.value = playListCount.value - 1;
   } else if (playIndex.value >= playListCount.value) {
     playIndex.value = 0;
   }
+
   nextTick(() => {
     player.value.play();
   });
@@ -197,7 +288,7 @@ const changeSong = (type) => {
 const loadMusicError = () => {
   let notice = "";
   if (playList.value.length > 1) {
-    notice = "播放歌曲出现错误，播放器将在 2 秒后切换下一首";
+    notice = "播放歌曲出现错误，播放器将于 2 秒后切换下一首";
     skipTimeout.value = setTimeout(() => {
       changeSong(1);
       if (!player.value.audio.paused) {
@@ -224,6 +315,8 @@ defineExpose({ playToggle, changeVolume, changeSong });
 onBeforeUnmount(() => {
   clearTimeout(skipTimeout.value);
   removeAutoplayListeners();
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  stopFade();
 });
 </script>
 
