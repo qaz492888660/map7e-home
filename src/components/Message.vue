@@ -1,8 +1,22 @@
 <template>
   <div class="message">
-    <div class="logo">
-      <img class="logo-img" :src="siteLogo" alt="logo" />
-    </div>
+    <button class="logo" type="button" @click="handleAvatarClick">
+      <div
+        class="logo-card"
+        :class="{
+          flipped,
+          unlocked,
+          pressing: isPressing,
+        }"
+      >
+        <div class="logo-face logo-front">
+          <img class="logo-img" :src="siteLogo" alt="avatar front" />
+        </div>
+        <div class="logo-face logo-back">
+          <img class="logo-img" :src="avatarBack" alt="avatar back" />
+        </div>
+      </div>
+    </button>
     <div class="description cards" @click="changeBox">
       <div class="content">
         <Icon size="16">
@@ -34,6 +48,7 @@ import { QuoteLeft, QuoteRight } from "@vicons/fa";
 import { Error } from "@icon-park/vue-next";
 import { mainStore } from "@/store";
 import siteLogo from "@/assets/images/map7e.jpg";
+import avatarBack from "@/assets/images/avatar-back.jpg";
 
 const store = mainStore();
 const motto = "须知少年拏云志，曾许人间第一流。";
@@ -44,8 +59,66 @@ const charStepMs = 180;
 const clausePauseMs = 700;
 const loopGapMs = 10000;
 const pauseAfterLength = Array.from("须知少年拏云志，").length;
+
+const clickCount = ref(0);
+const unlocked = ref(false);
+const flipped = ref(false);
+const hasShownMessage = ref(false);
+const isPressing = ref(false);
+
+const pressDurationMs = 160;
+const clickThrottleMs = 150;
+
 let revealTimer = null;
 let loopTimer = null;
+let pressTimer = null;
+let clickThrottleTimer = null;
+let clickLocked = false;
+
+const triggerPressFeedback = () => {
+  isPressing.value = false;
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+  }
+  requestAnimationFrame(() => {
+    isPressing.value = true;
+    pressTimer = setTimeout(() => {
+      isPressing.value = false;
+      pressTimer = null;
+    }, pressDurationMs);
+  });
+};
+
+const handleAvatarClick = () => {
+  if (clickLocked) {
+    return;
+  }
+  clickLocked = true;
+  clickThrottleTimer = setTimeout(() => {
+    clickLocked = false;
+    clickThrottleTimer = null;
+  }, clickThrottleMs);
+
+  triggerPressFeedback();
+
+  if (!unlocked.value) {
+    clickCount.value += 1;
+    if (clickCount.value === 7) {
+      unlocked.value = true;
+      flipped.value = true;
+      if (!hasShownMessage.value) {
+        ElMessage({
+          message: "恭喜你，找到了本站宝藏！！",
+          grouping: true,
+        });
+        hasShownMessage.value = true;
+      }
+    }
+    return;
+  }
+
+  flipped.value = !flipped.value;
+};
 
 const changeBox = () => {
   if (store.getInnerWidth >= 990) {
@@ -97,6 +170,12 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearMottoTimers();
+  if (pressTimer) {
+    clearTimeout(pressTimer);
+  }
+  if (clickThrottleTimer) {
+    clearTimeout(clickThrottleTimer);
+  }
 });
 </script>
 
@@ -111,17 +190,83 @@ onBeforeUnmount(() => {
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    perspective: 1600px;
+    -webkit-tap-highlight-color: transparent;
 
-    .logo-img {
+    .logo-card {
+      position: relative;
       width: 220px;
       height: 220px;
+      transform-style: preserve-3d;
+      --card-rotate: 0deg;
+      --card-scale: 1;
+      transition:
+        transform 1s cubic-bezier(0.22, 0.61, 0.36, 1),
+        box-shadow 0.24s ease;
+      border-radius: 28px;
+      box-shadow:
+        0 14px 30px rgba(15, 18, 38, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+      transform: rotateY(var(--card-rotate)) scale(var(--card-scale));
+      will-change: transform;
+
+      &.flipped {
+        --card-rotate: 180deg;
+      }
+
+      &.pressing {
+        --card-scale: 0.96;
+      }
+
+    }
+
+    .logo-face {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 28px;
+      overflow: hidden;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform-style: preserve-3d;
+    }
+
+    .logo-front {
+      transform: rotateY(0deg);
+      z-index: 2;
+    }
+
+    .logo-back {
+      transform: rotateY(180deg);
+      z-index: 1;
+    }
+
+    .logo-img {
+      width: 100%;
+      height: 100%;
       object-fit: cover;
       border-radius: 28px;
       display: block;
+      user-select: none;
+      pointer-events: none;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    &:focus-visible .logo-card {
+      outline: 2px solid rgba(255, 255, 255, 0.55);
+      outline-offset: 6px;
     }
 
     @media (max-width: 768px) {
-      .logo-img {
+      .logo-card {
         width: 180px;
         height: 180px;
       }
@@ -180,9 +325,14 @@ onBeforeUnmount(() => {
 
   @media (max-width: 390px) {
     .logo {
-      .logo-img {
+      .logo-card {
         width: 150px;
         height: 150px;
+        border-radius: 22px;
+      }
+
+      .logo-face,
+      .logo-img {
         border-radius: 22px;
       }
     }
