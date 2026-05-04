@@ -179,18 +179,23 @@ onBeforeUnmount(() => {
   z-index: 2;
   width: 100%;
   height: 100%;
-  transform: scale(1.2);
-  transition: transform 0.3s;
-  animation: fade-blur-main-in 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  animation-delay: 0.5s;
+  opacity: 0;
+  transform: scale(1.01);
+  transform-origin: center center;
+  animation: cinematic-main-shell-in 1.25s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards;
+  will-change: transform, opacity, filter;
   .container {
     width: 100%;
     height: 100vh;
     margin: 0 auto;
+    opacity: 0;
+    transform: translateY(18px) scale(0.988);
+    filter: blur(12px);
     transition:
       opacity 1.65s ease,
       transform 1.95s cubic-bezier(0.22, 1, 0.36, 1),
       filter 1.65s ease;
+    animation: cinematic-content-in 1.45s cubic-bezier(0.22, 1, 0.36, 1) 0.14s forwards;
     &.hidden {
       opacity: 0;
       transform: scale(0.968);
@@ -220,6 +225,58 @@ onBeforeUnmount(() => {
     @media (max-width: 1200px) {
       padding: 0 2vw;
     }
+  }
+  :deep(.left),
+  :deep(.right),
+  :deep(.box),
+  :deep(.left .logo),
+  :deep(.left .social),
+  :deep(.right .function),
+  :deep(.right .links),
+  :deep(.right .links .line) {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    filter: blur(10px);
+    will-change: transform, opacity, filter;
+    animation: cinematic-lift-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  :deep(.left) {
+    animation-delay: 0.32s;
+  }
+  :deep(.right) {
+    animation-delay: 0.44s;
+  }
+  :deep(.box) {
+    animation-delay: 0.74s;
+  }
+  :deep(.left .description),
+  :deep(.right .function .right),
+  :deep(.right .links .item),
+  :deep(.menu),
+  :deep(#footer),
+  :deep(.bg-glow-trigger) {
+    opacity: 0;
+    filter: blur(8px);
+    will-change: opacity, filter;
+    animation: cinematic-fade-in 1.15s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  :deep(.left .description) {
+    animation-delay: 0.58s;
+  }
+  :deep(.right .function .right) {
+    animation-delay: 0.7s;
+  }
+  :deep(.right .links .item) {
+    animation-delay: 0.9s;
+  }
+  :deep(.menu) {
+    animation-delay: 0.98s;
+  }
+  :deep(#footer) {
+    animation-delay: 1.02s;
+  }
+  :deep(.bg-glow-trigger) {
+    animation-delay: 1.08s;
   }
   .menu {
     position: fixed;
@@ -364,6 +421,56 @@ onBeforeUnmount(() => {
     &.active {
       animation: preview-overlay-fade 2.1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
     }
+  }
+}
+
+@keyframes cinematic-main-shell-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.02);
+    filter: blur(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes cinematic-content-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.988);
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes cinematic-lift-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes cinematic-fade-in {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
   }
 }
 
