@@ -103,27 +103,8 @@ onBeforeUnmount(() => {
   transition: 0.25s;
   z-index: -1;
   overflow: hidden;
-  isolation: isolate;
 
   &.show {
-    z-index: 1;
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(
-        circle at center,
-        rgba(8, 10, 18, 0.02) 0%,
-        rgba(8, 10, 18, 0.22) 58%,
-        rgba(8, 10, 18, 0.34) 100%
-      ),
-      linear-gradient(180deg, rgba(2, 4, 10, 0.16) 0%, rgba(2, 4, 10, 0.3) 100%);
-    opacity: 0;
-    animation: cinematic-cover-fade 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     z-index: 1;
   }
 
@@ -140,41 +121,20 @@ onBeforeUnmount(() => {
     backface-visibility: visible;
     transform: translate3d(v-bind(bgShiftX), 0, 0);
     scale: 1.08;
-    will-change: transform, filter, opacity, scale;
-    filter: blur(16px) brightness(0.58) saturate(0.92);
-    opacity: 0;
-    animation: cinematic-bg-zoom-in 1.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    z-index: 0;
-  }
-}
-
-@keyframes cinematic-cover-fade {
-  0% {
-    opacity: 0;
-  }
-  35% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.86;
+    will-change: transform, filter, scale;
+    filter: blur(8px) brightness(0.92);
+    animation: cinematic-bg-zoom-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;
   }
 }
 
 @keyframes cinematic-bg-zoom-in {
   0% {
-    opacity: 0;
     scale: 1.08;
-    filter: blur(18px) brightness(0.52) saturate(0.88);
-  }
-  38% {
-    opacity: 1;
-    scale: 1.05;
-    filter: blur(10px) brightness(0.68) saturate(0.92);
+    filter: blur(8px) brightness(0.92);
   }
   100% {
-    opacity: 1;
     scale: 1;
-    filter: blur(0) brightness(1) saturate(1);
+    filter: blur(0) brightness(1);
   }
 }
 </style>
