@@ -58,9 +58,12 @@ const changeBg = (type) => {
 };
 
 const imgLoadComplete = () => {
-  imgTimeout.value = setTimeout(() => {
-    store.setImgLoadStatus(true);
-  }, Math.floor(Math.random() * 301) + 300);
+  imgTimeout.value = setTimeout(
+    () => {
+      store.setImgLoadStatus(true);
+    },
+    Math.floor(Math.random() * 301) + 300,
+  );
 };
 
 const imgAnimationEnd = () => {
