@@ -57,6 +57,7 @@ import Box from "@/views/Box/index.vue";
 import MoreSet from "@/views/MoreSet/index.vue";
 import cursorInit from "@/utils/cursor.js";
 import config from "@/../package.json";
+import { inject } from "@vercel/analytics";
 
 const store = mainStore();
 let backgroundRevealTimer = null;
@@ -116,6 +117,9 @@ const previewBackground = () => {
 };
 
 onMounted(() => {
+  // Vercel Analytics
+  inject();
+
   // 自定义鼠标
   cursorInit();
 
@@ -379,8 +383,13 @@ onBeforeUnmount(() => {
     pointer-events: none;
     opacity: 0;
     backdrop-filter: none;
-    background:
-      radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 26%, rgba(18, 14, 30, 0.08) 58%, rgba(18, 14, 30, 0.02) 100%);
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.03) 26%,
+      rgba(18, 14, 30, 0.08) 58%,
+      rgba(18, 14, 30, 0.02) 100%
+    );
     &.active {
       animation: preview-overlay-fade 2.1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
     }

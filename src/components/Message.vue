@@ -222,7 +222,6 @@ onBeforeUnmount(() => {
       &.pressing {
         --card-scale: 0.96;
       }
-
     }
 
     .logo-face {
