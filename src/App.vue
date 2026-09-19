@@ -4,7 +4,7 @@
   <!-- 壁纸 -->
   <Background @loadComplete="loadComplete" />
   <!-- 主界面 -->
-  <Transition name="fade" mode="out-in">
+  <Transition name="home-reveal" mode="out-in">
     <main id="main" :class="{ 'previewing-bg': previewActive }" v-if="store.imgLoadStatus">
       <div class="preview-overlay" :class="{ active: previewActive }" />
       <div class="container" :class="{ hidden: previewContentHidden }">
@@ -179,6 +179,7 @@ onBeforeUnmount(() => {
   z-index: 2;
   width: 100%;
   height: 100%;
+
   .container {
     width: 100%;
     height: 100vh;
@@ -190,7 +191,7 @@ onBeforeUnmount(() => {
     &:not(.hidden) {
       opacity: 1;
       transform: translateY(0) scale(1);
-      animation: cinematic-content-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.55s backwards;
+      animation: cinematic-content-in 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.78s backwards;
     }
     &.hidden {
       opacity: 0;
@@ -226,17 +227,17 @@ onBeforeUnmount(() => {
   :deep(.right),
   :deep(.box) {
     opacity: 1;
-    animation: cinematic-layer-fade-in 0.9s ease 0.65s backwards;
+    animation: cinematic-layer-fade-in 1.3s ease 0.94s backwards;
   }
   :deep(.right) {
-    animation-delay: 0.78s;
+    animation-delay: 1.06s;
   }
   :deep(.box) {
-    animation-delay: 0.82s;
+    animation-delay: 1.12s;
   }
   :deep(#footer) {
     opacity: 1;
-    animation: cinematic-layer-fade-in 0.85s ease 0.88s backwards;
+    animation: cinematic-layer-fade-in 1.2s ease 1.18s backwards;
   }
   .menu {
     position: fixed;
@@ -252,7 +253,7 @@ onBeforeUnmount(() => {
     border-radius: 6px;
     transition: transform 0.3s;
     opacity: 1;
-    animation: cinematic-menu-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.9s backwards;
+    animation: cinematic-menu-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.18s backwards;
     transition:
       opacity 1.3s ease,
       transform 1.35s ease,
@@ -293,8 +294,8 @@ onBeforeUnmount(() => {
       0 0 18px rgba(255, 214, 120, 0.42),
       inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     animation:
-      cinematic-glow-trigger-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.95s backwards,
-      glow-pulse 2.4s ease-in-out 1.8s infinite;
+      cinematic-glow-trigger-in 1.05s cubic-bezier(0.22, 1, 0.36, 1) 1.24s backwards,
+      glow-pulse 2.4s ease-in-out 2.35s infinite;
     transition:
       transform 0.25s ease,
       opacity 1s ease,
@@ -387,23 +388,60 @@ onBeforeUnmount(() => {
   }
 }
 
+.home-reveal-enter-active {
+  transition:
+    opacity 1.7s cubic-bezier(0.22, 1, 0.36, 1) 0.52s,
+    filter 1.85s cubic-bezier(0.22, 1, 0.36, 1) 0.48s,
+    transform 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.48s;
+}
+
+.home-reveal-enter-from {
+  opacity: 0;
+  filter: blur(12px);
+  transform: scale(1.018);
+}
+
+.home-reveal-enter-to {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
 @keyframes cinematic-content-in {
   0% {
     opacity: 0;
-    transform: translateY(24px) scale(0.98);
+    transform: translateY(22px) scale(0.982);
+    filter: blur(9px);
   }
+
+  42% {
+    opacity: 0.36;
+    filter: blur(5px);
+  }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
 @keyframes cinematic-layer-fade-in {
   0% {
     opacity: 0;
+    filter: blur(7px);
+    transform: translateY(8px);
   }
+
+  55% {
+    opacity: 0.5;
+    filter: blur(3px);
+  }
+
   100% {
     opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
   }
 }
 
