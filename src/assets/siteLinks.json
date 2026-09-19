@@ -5,14 +5,19 @@
     "link": "https://blog.map7e.com/"
   },
   {
+    "icon": "CompactDisc",
+    "name": "音乐",
+    "link": "https://music.map7e.com/"
+  },
+  {
     "icon": "Cloud",
     "name": "网盘",
     "link": "https://cloud.map7e.com/"
   },
   {
-    "icon": "CompactDisc",
-    "name": "音乐",
-    "link": "https://music.map7e.com/"
+    "icon": "BookOpen",
+    "name": "书房",
+    "link": "https://reader.map7e.com/"
   },
   {
     "icon": "Compass",
