@@ -23,10 +23,21 @@
           <el-col v-for="(item, index) in site" :key="item.name" :span="columnSpan">
             <div
               class="item cards"
+              :class="{ 'reader-card': item.name === '书房' }"
               :style="index < itemsPerRow ? 'margin-bottom: 20px' : null"
               @click="jumpLink(item)"
             >
-              <Icon size="26">
+              <svg
+                v-if="item.icon === 'ReaderBook'"
+                class="reader-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3.5 5.25c2.55 0 4.7.56 6.5 1.69v11.81c-1.8-1.13-3.95-1.69-6.5-1.69V5.25Zm17 0c-2.55 0-4.7.56-6.5 1.69v11.81c1.8-1.13 3.95-1.69 6.5-1.69V5.25ZM12 7.2v11.55"
+                />
+              </svg>
+              <Icon v-else size="26">
                 <component :is="siteIcon[item.icon]" />
               </Icon>
               <span class="name text-hidden">{{ item.name }}</span>
@@ -41,7 +52,7 @@
 
 <script setup>
 import { Icon } from "@vicons/utils";
-import { Link, Blog, CompactDisc, Cloud, BookOpen, Compass, LaptopCode } from "@vicons/fa";
+import { Link, Blog, CompactDisc, Cloud, Compass, LaptopCode } from "@vicons/fa";
 import { mainStore } from "@/store";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Pagination, Mousewheel } from "swiper";
@@ -66,7 +77,6 @@ const siteIcon = {
   Blog,
   Cloud,
   CompactDisc,
-  BookOpen,
   Compass,
   LaptopCode,
 };
@@ -143,10 +153,36 @@ const jumpLink = (data) => {
       justify-content: center;
       padding: 0 10px;
       animation: fade 0.5s;
+      background: rgb(0 0 0 / 20%);
+
+      &.reader-card {
+        background: rgb(0 0 0 / 42%);
+        box-shadow:
+          inset 0 0 0 1px rgb(255 255 255 / 10%),
+          0 8px 22px rgb(0 0 0 / 10%);
+
+        &:hover {
+          background: rgb(0 0 0 / 52%);
+        }
+      }
+
+      .reader-icon {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.15;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      &:not(.reader-card):hover {
+        background: rgb(0 0 0 / 34%);
+      }
 
       &:hover {
         transform: scale(1.02);
-        background: rgb(0 0 0 / 40%);
         transition: 0.3s;
       }
 
