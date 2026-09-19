@@ -23,7 +23,6 @@
           <el-col v-for="(item, index) in site" :key="item.name" :span="columnSpan">
             <div
               class="item cards"
-              :class="{ 'reader-card': item.name === '书房' }"
               :style="index < itemsPerRow ? 'margin-bottom: 20px' : null"
               @click="jumpLink(item)"
             >
@@ -155,17 +154,6 @@ const jumpLink = (data) => {
       animation: fade 0.5s;
       background: rgb(0 0 0 / 20%);
 
-      &.reader-card {
-        background: rgb(0 0 0 / 42%);
-        box-shadow:
-          inset 0 0 0 1px rgb(255 255 255 / 10%),
-          0 8px 22px rgb(0 0 0 / 10%);
-
-        &:hover {
-          background: rgb(0 0 0 / 52%);
-        }
-      }
-
       .reader-icon {
         width: 28px;
         height: 28px;
@@ -177,12 +165,9 @@ const jumpLink = (data) => {
         stroke-linejoin: round;
       }
 
-      &:not(.reader-card):hover {
-        background: rgb(0 0 0 / 34%);
-      }
-
       &:hover {
         transform: scale(1.02);
+        background: rgb(0 0 0 / 34%);
         transition: 0.3s;
       }
 
