@@ -3,6 +3,7 @@
     <img
       v-show="store.imgLoadStatus"
       class="bg"
+      :class="{ 'intro-ready': introReady }"
       alt="cover"
       :src="bgUrl"
       @load="imgLoadComplete"
@@ -17,7 +18,15 @@ import { mainStore } from "@/store";
 import { Error } from "@icon-park/vue-next";
 import localSceneBg from "@/assets/images/background-kame-4k.jpg";
 
+const props = defineProps({
+  introReady: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const store = mainStore();
+const introReady = computed(() => props.introReady);
 const bgUrl = ref(null);
 const imgTimeout = ref(null);
 const bgShiftX = ref("0px");
@@ -123,7 +132,10 @@ onBeforeUnmount(() => {
     scale: 1.08;
     will-change: transform, filter, scale;
     filter: blur(8px) brightness(0.92);
-    animation: cinematic-bg-zoom-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;
+
+    &.intro-ready {
+      animation: cinematic-bg-zoom-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;
+    }
   }
 }
 
