@@ -2,11 +2,14 @@
   <!-- 加载 -->
   <Loading />
   <!-- 壁纸 -->
-  <Background @loadComplete="loadComplete" />
+  <Background :intro-ready="introReady" @loadComplete="loadComplete" />
   <!-- 主界面 -->
   <Transition name="fade" mode="out-in">
-    <main id="main" :class="{ 'previewing-bg': previewActive }" v-if="store.imgLoadStatus">
-      <div class="intro-reveal-veil" :class="{ ready: introReady }" />
+    <main
+      id="main"
+      :class="{ 'previewing-bg': previewActive, 'intro-ready': introReady }"
+      v-if="store.imgLoadStatus"
+    >
       <div class="preview-overlay" :class="{ active: previewActive }" />
       <div class="container" :class="{ hidden: previewContentHidden }">
         <section class="all" v-show="!store.setOpenState">
@@ -394,24 +397,25 @@ onBeforeUnmount(() => {
       }
     }
   }
-  .intro-reveal-veil {
-    position: fixed;
-    inset: 0;
-    z-index: 24;
-    pointer-events: none;
-    opacity: 1;
-    background: rgba(109, 145, 216, 0.1);
-    -webkit-backdrop-filter: blur(13px) saturate(0.94);
-    backdrop-filter: blur(13px) saturate(0.94);
-    transition:
-      opacity 0.82s cubic-bezier(0.22, 1, 0.36, 1),
-      -webkit-backdrop-filter 0.82s cubic-bezier(0.22, 1, 0.36, 1),
-      backdrop-filter 0.82s cubic-bezier(0.22, 1, 0.36, 1);
-
-    &.ready {
+  &:not(.intro-ready) {
+    .container:not(.hidden) {
       opacity: 0;
-      -webkit-backdrop-filter: blur(0) saturate(1);
-      backdrop-filter: blur(0) saturate(1);
+      transform: translateY(24px) scale(0.98);
+      animation: none;
+    }
+
+    :deep(.left),
+    :deep(.right),
+    :deep(.box),
+    :deep(#footer) {
+      opacity: 0;
+      animation: none;
+    }
+
+    .menu,
+    .bg-glow-trigger {
+      opacity: 0;
+      animation: none;
     }
   }
 
