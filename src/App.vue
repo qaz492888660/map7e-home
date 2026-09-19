@@ -4,8 +4,9 @@
   <!-- 壁纸 -->
   <Background @loadComplete="loadComplete" />
   <!-- 主界面 -->
-  <Transition name="home-reveal" mode="out-in">
+  <Transition name="fade" mode="out-in">
     <main id="main" :class="{ 'previewing-bg': previewActive }" v-if="store.imgLoadStatus">
+      <div class="intro-reveal-veil" :class="{ ready: introReady }" />
       <div class="preview-overlay" :class="{ active: previewActive }" />
       <div class="container" :class="{ hidden: previewContentHidden }">
         <section class="all" v-show="!store.setOpenState">
@@ -61,8 +62,10 @@ import config from "@/../package.json";
 const store = mainStore();
 let backgroundRevealTimer = null;
 let backgroundFadeTimer = null;
+let introRevealTimer = null;
 const previewActive = ref(false);
 const previewContentHidden = ref(false);
+const introReady = ref(false);
 
 // 页面宽度
 const getWidth = () => {
@@ -78,6 +81,21 @@ const loadComplete = () => {
     checkDays();
   });
 };
+
+// 开场云幕进入第二段拉开时，只执行一次主页朦胧转清晰
+watch(
+  () => store.imgLoadStatus,
+  (loaded) => {
+    if (!loaded) return;
+    if (introRevealTimer) clearTimeout(introRevealTimer);
+    introReady.value = false;
+    introRevealTimer = setTimeout(() => {
+      introReady.value = true;
+      introRevealTimer = null;
+    }, 1220);
+  },
+  { immediate: true },
+);
 
 // 监听宽度变化
 watch(
@@ -167,6 +185,9 @@ onBeforeUnmount(() => {
   if (backgroundFadeTimer) {
     clearTimeout(backgroundFadeTimer);
   }
+  if (introRevealTimer) {
+    clearTimeout(introRevealTimer);
+  }
   window.removeEventListener("resize", getWidth);
 });
 </script>
@@ -191,7 +212,7 @@ onBeforeUnmount(() => {
     &:not(.hidden) {
       opacity: 1;
       transform: translateY(0) scale(1);
-      animation: cinematic-content-in 1.5s cubic-bezier(0.22, 1, 0.36, 1) 0.78s backwards;
+      animation: cinematic-content-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.55s backwards;
     }
     &.hidden {
       opacity: 0;
@@ -227,17 +248,17 @@ onBeforeUnmount(() => {
   :deep(.right),
   :deep(.box) {
     opacity: 1;
-    animation: cinematic-layer-fade-in 1.3s ease 0.94s backwards;
+    animation: cinematic-layer-fade-in 0.9s ease 0.65s backwards;
   }
   :deep(.right) {
-    animation-delay: 1.06s;
+    animation-delay: 0.78s;
   }
   :deep(.box) {
-    animation-delay: 1.12s;
+    animation-delay: 0.82s;
   }
   :deep(#footer) {
     opacity: 1;
-    animation: cinematic-layer-fade-in 1.2s ease 1.18s backwards;
+    animation: cinematic-layer-fade-in 0.85s ease 0.88s backwards;
   }
   .menu {
     position: fixed;
@@ -253,7 +274,7 @@ onBeforeUnmount(() => {
     border-radius: 6px;
     transition: transform 0.3s;
     opacity: 1;
-    animation: cinematic-menu-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.18s backwards;
+    animation: cinematic-menu-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.9s backwards;
     transition:
       opacity 1.3s ease,
       transform 1.35s ease,
@@ -294,8 +315,8 @@ onBeforeUnmount(() => {
       0 0 18px rgba(255, 214, 120, 0.42),
       inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     animation:
-      cinematic-glow-trigger-in 1.05s cubic-bezier(0.22, 1, 0.36, 1) 1.24s backwards,
-      glow-pulse 2.4s ease-in-out 2.35s infinite;
+      cinematic-glow-trigger-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.95s backwards,
+      glow-pulse 2.4s ease-in-out 1.8s infinite;
     transition:
       transform 0.25s ease,
       opacity 1s ease,
@@ -373,6 +394,27 @@ onBeforeUnmount(() => {
       }
     }
   }
+  .intro-reveal-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 24;
+    pointer-events: none;
+    opacity: 1;
+    background: rgba(109, 145, 216, 0.1);
+    -webkit-backdrop-filter: blur(13px) saturate(0.94);
+    backdrop-filter: blur(13px) saturate(0.94);
+    transition:
+      opacity 0.82s cubic-bezier(0.22, 1, 0.36, 1),
+      -webkit-backdrop-filter 0.82s cubic-bezier(0.22, 1, 0.36, 1),
+      backdrop-filter 0.82s cubic-bezier(0.22, 1, 0.36, 1);
+
+    &.ready {
+      opacity: 0;
+      -webkit-backdrop-filter: blur(0) saturate(1);
+      backdrop-filter: blur(0) saturate(1);
+    }
+  }
+
   .preview-overlay {
     position: fixed;
     inset: 0;
@@ -388,60 +430,23 @@ onBeforeUnmount(() => {
   }
 }
 
-.home-reveal-enter-active {
-  transition:
-    opacity 1.7s cubic-bezier(0.22, 1, 0.36, 1) 0.52s,
-    filter 1.85s cubic-bezier(0.22, 1, 0.36, 1) 0.48s,
-    transform 1.8s cubic-bezier(0.22, 1, 0.36, 1) 0.48s;
-}
-
-.home-reveal-enter-from {
-  opacity: 0;
-  filter: blur(12px);
-  transform: scale(1.018);
-}
-
-.home-reveal-enter-to {
-  opacity: 1;
-  filter: blur(0);
-  transform: scale(1);
-}
-
 @keyframes cinematic-content-in {
   0% {
     opacity: 0;
-    transform: translateY(22px) scale(0.982);
-    filter: blur(9px);
+    transform: translateY(24px) scale(0.98);
   }
-
-  42% {
-    opacity: 0.36;
-    filter: blur(5px);
-  }
-
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
-    filter: blur(0);
   }
 }
 
 @keyframes cinematic-layer-fade-in {
   0% {
     opacity: 0;
-    filter: blur(7px);
-    transform: translateY(8px);
   }
-
-  55% {
-    opacity: 0.5;
-    filter: blur(3px);
-  }
-
   100% {
     opacity: 1;
-    filter: blur(0);
-    transform: translateY(0);
   }
 }
 
