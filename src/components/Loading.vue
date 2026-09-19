@@ -67,8 +67,8 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
   visibility: visible;
   isolation: isolate;
   transition:
-    opacity 0.42s 1.03s ease,
-    visibility 0s 1.46s;
+    opacity 0.26s 1.78s ease,
+    visibility 0s 2.08s;
 
   .loader-scene {
     position: absolute;
@@ -216,29 +216,30 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
   .cloud-curtain {
     position: absolute;
     top: -5%;
-    width: 55%;
+    width: 58%;
     height: 110%;
     z-index: 4;
     pointer-events: none;
     will-change: transform, opacity, filter;
-    transition:
-      transform 1.12s cubic-bezier(0.7, 0, 0.2, 1),
-      opacity 0.72s 0.12s ease,
-      filter 0.8s ease;
+    transform-origin: center center;
 
     &::before {
       content: "";
       position: absolute;
-      top: 2%;
-      bottom: 2%;
-      width: 84%;
+      top: -2%;
+      bottom: -2%;
+      width: 112%;
       border-radius: 48% 44% 52% 46%;
-      opacity: 0.5;
-      filter: blur(22px);
+      opacity: 0.98;
+      filter: blur(12px);
       background:
-        radial-gradient(circle at 58% 15%, rgba(255, 239, 135, 0.8), transparent 34%),
-        radial-gradient(circle at 48% 42%, rgba(255, 204, 73, 0.68), transparent 37%),
-        radial-gradient(circle at 54% 72%, rgba(246, 161, 48, 0.55), transparent 42%);
+        radial-gradient(circle at 62% 13%, rgba(255, 246, 171, 0.96), transparent 30%),
+        radial-gradient(circle at 52% 38%, rgba(255, 220, 92, 0.98), transparent 38%),
+        radial-gradient(circle at 58% 69%, rgba(250, 178, 55, 0.96), transparent 43%),
+        linear-gradient(90deg, #ef9830 0%, #ffc847 42%, #ffe477 78%, #fff0a0 100%);
+      box-shadow:
+        inset -18px 0 34px rgba(229, 132, 37, 0.18),
+        inset 18px 0 30px rgba(255, 245, 171, 0.26);
     }
 
     &::after {
@@ -246,9 +247,9 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
       position: absolute;
       top: 0;
       bottom: 0;
-      width: 26%;
-      opacity: 0.56;
-      filter: blur(18px);
+      width: 34%;
+      opacity: 0.7;
+      filter: blur(14px);
       background: linear-gradient(
         180deg,
         rgba(255, 242, 160, 0.46),
@@ -363,7 +364,7 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
   }
 
   .cloud-curtain-left {
-    left: -11%;
+    left: -4%;
 
     &::before {
       left: -3%;
@@ -385,7 +386,7 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
   }
 
   .cloud-curtain-right {
-    right: -11%;
+    right: -4%;
     transform: scaleX(-1);
 
     &::before {
@@ -413,20 +414,15 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
     visibility: hidden;
 
     .loader {
-      opacity: 0;
-      transform: translateY(-2vh) scale(0.93);
+      animation: loader-release 0.55s ease forwards;
     }
 
     .cloud-curtain-left {
-      transform: translate3d(-116%, 0, 0) scale(1.04);
-      opacity: 0.4;
-      filter: blur(3px);
+      animation: curtain-open-left 1.95s forwards;
     }
 
     .cloud-curtain-right {
-      transform: translate3d(116%, 0, 0) scaleX(-1) scale(1.04);
-      opacity: 0.4;
-      filter: blur(3px);
+      animation: curtain-open-right 1.95s forwards;
     }
   }
 }
@@ -458,6 +454,91 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
 
   to {
     transform: scale(1.075);
+  }
+}
+
+@keyframes loader-release {
+  0%,
+  22% {
+    opacity: 1;
+    transform: translateY(-2vh) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-2vh) scale(0.92);
+  }
+}
+
+@keyframes curtain-open-left {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+    animation-timing-function: cubic-bezier(0.18, 0.82, 0.3, 1);
+  }
+
+  30% {
+    transform: translate3d(-24%, 0, 0) scaleX(1.035);
+    animation-timing-function: cubic-bezier(0.35, 0, 0.55, 1);
+  }
+
+  40% {
+    transform: translate3d(-20%, 0, 0) scaleX(0.985);
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+
+  50%,
+  64% {
+    transform: translate3d(-24%, 0, 0) scaleX(1.01);
+    animation-timing-function: cubic-bezier(0.12, 0.72, 0.16, 1);
+  }
+
+  78% {
+    transform: translate3d(-66%, 0, 0) scaleX(1.045);
+    opacity: 0.98;
+  }
+
+  100% {
+    transform: translate3d(-124%, 0, 0) scaleX(1.04);
+    opacity: 0.24;
+    filter: blur(3px);
+  }
+}
+
+@keyframes curtain-open-right {
+  0% {
+    transform: translate3d(0, 0, 0) scaleX(-1) scale(1);
+    opacity: 1;
+    filter: blur(0);
+    animation-timing-function: cubic-bezier(0.18, 0.82, 0.3, 1);
+  }
+
+  30% {
+    transform: translate3d(24%, 0, 0) scaleX(-1) scale(1.035);
+    animation-timing-function: cubic-bezier(0.35, 0, 0.55, 1);
+  }
+
+  40% {
+    transform: translate3d(20%, 0, 0) scaleX(-1) scale(0.985);
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+
+  50%,
+  64% {
+    transform: translate3d(24%, 0, 0) scaleX(-1) scale(1.01);
+    animation-timing-function: cubic-bezier(0.12, 0.72, 0.16, 1);
+  }
+
+  78% {
+    transform: translate3d(66%, 0, 0) scaleX(-1) scale(1.045);
+    opacity: 0.98;
+  }
+
+  100% {
+    transform: translate3d(124%, 0, 0) scaleX(-1) scale(1.04);
+    opacity: 0.24;
+    filter: blur(3px);
   }
 }
 
@@ -516,7 +597,7 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
     }
 
     .cloud-curtain {
-      width: 63%;
+      width: 64%;
 
       .cloud-knot {
         width: clamp(150px, 45vw, 220px);
@@ -524,11 +605,11 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
     }
 
     .cloud-curtain-left {
-      left: -22%;
+      left: -10%;
     }
 
     .cloud-curtain-right {
-      right: -22%;
+      right: -10%;
     }
   }
 }
@@ -536,15 +617,15 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
 @media (max-width: 420px) {
   #loader-wrapper {
     .cloud-curtain {
-      width: 69%;
+      width: 66%;
     }
 
     .cloud-curtain-left {
-      left: -27%;
+      left: -12%;
     }
 
     .cloud-curtain-right {
-      right: -27%;
+      right: -12%;
     }
   }
 }
