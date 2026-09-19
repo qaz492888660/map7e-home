@@ -41,7 +41,7 @@
 
 <script setup>
 import { Icon } from "@vicons/utils";
-import { Link, Blog, CompactDisc, Cloud, Compass, LaptopCode } from "@vicons/fa";
+import { Link, Blog, CompactDisc, Cloud, BookOpen, Compass, LaptopCode } from "@vicons/fa";
 import { mainStore } from "@/store";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import { Pagination, Mousewheel } from "swiper";
@@ -66,6 +66,7 @@ const siteIcon = {
   Blog,
   Cloud,
   CompactDisc,
+  BookOpen,
   Compass,
   LaptopCode,
 };
