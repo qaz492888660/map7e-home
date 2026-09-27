@@ -46,7 +46,6 @@
           </g>
         </svg>
       </div>
-      <div class="loader-scene-glow" />
     </div>
 
     <div class="loader">
@@ -97,11 +96,42 @@ let pathLength = 0;
 let flightStartLength = 0;
 let flightStartTime = 0;
 let flightDuration = 3100;
+let portraitFacingEnabled = false;
+let facingMirrored = false;
+let facingInitialized = false;
 
 const normalizeAngle = (angle) => {
   let normalized = ((((angle + 180) % 360) + 360) % 360) - 180;
   if (normalized === -180) normalized = 180;
   return normalized;
+};
+
+const mirroredSpriteHeading = normalizeAngle(180 - GOKU_SPRITE_HEADING_DEG);
+
+const prefersMirroredFacing = (tangent) => {
+  const nativeOffset = Math.abs(normalizeAngle(tangent - GOKU_SPRITE_HEADING_DEG));
+  const mirroredOffset = Math.abs(normalizeAngle(tangent - mirroredSpriteHeading));
+  return mirroredOffset < nativeOffset;
+};
+
+const isSpriteOutsideViewport = (point, scale) => {
+  const art = document.querySelector(".loader-scene-art");
+  if (!art) return false;
+
+  const rect = art.getBoundingClientRect();
+  if (!rect.width || !rect.height) return false;
+
+  const centerX = rect.left + (point.x / GOKU_SCENE_WIDTH) * rect.width;
+  const centerY = rect.top + (point.y / GOKU_SCENE_HEIGHT) * rect.height;
+  const halfWidth = (GOKU_SPRITE_WIDTH * scale * rect.width) / GOKU_SCENE_WIDTH / 2;
+  const halfHeight = (GOKU_SPRITE_HEIGHT * scale * rect.height) / GOKU_SCENE_HEIGHT / 2;
+
+  return (
+    centerX + halfWidth <= 0 ||
+    centerX - halfWidth >= window.innerWidth ||
+    centerY + halfHeight <= 0 ||
+    centerY - halfHeight >= window.innerHeight
+  );
 };
 
 const completeFlight = () => {
@@ -125,21 +155,33 @@ const setFlightProgress = (progress) => {
   const tangent = normalizeAngle(
     (Math.atan2(after.y - before.y, after.x - before.x) * 180) / Math.PI,
   );
-  // Keep the sprite's original back/side-back facing for the whole inward loop.
-  // Only bank by a small amount against its native artwork angle; never mirror
-  // it to chase the tangent. The last part of the path eases the bank to zero.
-  const tangentOffset = tangent - GOKU_SPRITE_HEADING_DEG;
+  const scale = 0.82 + 0.18 * progress;
+  const riderX = progress === 1 ? GOKU_FINAL_X : point.x;
+  const riderY = progress === 1 ? GOKU_FINAL_Y : point.y;
+
+  // On a portrait screen the first visible leg travels right while the sprite's
+  // native cloud trail points left. The turn is outside the crop, so change
+  // facing only there; never flip the rider while it is visible.
+  if (portraitFacingEnabled) {
+    const preferredFacing = prefersMirroredFacing(tangent);
+    if (!facingInitialized) {
+      facingMirrored = preferredFacing;
+      facingInitialized = true;
+    } else if (preferredFacing !== facingMirrored && isSpriteOutsideViewport(point, scale)) {
+      facingMirrored = preferredFacing;
+    }
+  }
+
+  const spriteHeading = facingMirrored ? mirroredSpriteHeading : GOKU_SPRITE_HEADING_DEG;
+  const tangentOffset = normalizeAngle(tangent - spriteHeading);
   const maxBank = 14;
   const tangentBank = Math.max(-maxBank, Math.min(maxBank, tangentOffset * 0.18));
   const settleProgress = Math.max(0, Math.min(1, (progress - 0.78) / 0.22));
   const settleEase = settleProgress * settleProgress * (3 - 2 * settleProgress);
   const bank = progress === 1 ? 0 : tangentBank * (1 - settleEase);
 
-  const scale = 0.82 + 0.18 * progress;
-  const riderX = progress === 1 ? GOKU_FINAL_X : point.x;
-  const riderY = progress === 1 ? GOKU_FINAL_Y : point.y;
   rider.setAttribute("transform", `translate(${riderX} ${riderY}) scale(${scale})`);
-  pose.setAttribute("transform", `rotate(${bank})`);
+  pose.setAttribute("transform", `rotate(${bank}) scale(${facingMirrored ? -1 : 1} 1)`);
   trail.style.strokeDashoffset = `${Math.max(0, pathLength - distance)}`;
 };
 
@@ -191,6 +233,9 @@ const beginFlight = async () => {
 
   pathLength = path.getTotalLength();
   flightStartLength = findVisiblePathStart(path, pathLength);
+  portraitFacingEnabled = window.innerHeight > window.innerWidth;
+  facingMirrored = false;
+  facingInitialized = false;
   trail.style.strokeDasharray = `${pathLength} ${pathLength}`;
   trail.style.strokeDashoffset = `${pathLength - flightStartLength}`;
   flightStarted.value = true;
@@ -264,8 +309,7 @@ onBeforeUnmount(() => {
       aspect-ratio: 16 / 9;
       transform: translate(-50%, -50%);
       scale: 1.08;
-      filter: blur(8px) brightness(0.92);
-      will-change: transform, filter, scale;
+      will-change: transform, scale;
     }
 
     .loader-scene-image {
@@ -353,24 +397,6 @@ onBeforeUnmount(() => {
         }
       }
     }
-
-    .loader-scene-glow {
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(
-          circle at 50% 48%,
-          rgba(255, 239, 185, 0.25) 0%,
-          rgba(255, 225, 155, 0.1) 24%,
-          transparent 48%
-        ),
-        linear-gradient(
-          180deg,
-          rgba(29, 54, 104, 0.08) 0%,
-          transparent 34%,
-          rgba(255, 170, 101, 0.05) 66%,
-          rgba(16, 32, 58, 0.08) 100%
-        );
-    }
   }
 
   .loader {
@@ -440,7 +466,7 @@ onBeforeUnmount(() => {
       box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.28),
         0 10px 30px rgba(31, 47, 74, 0.12);
-      backdrop-filter: blur(5px);
+      backdrop-filter: none;
 
       .name {
         color: var(--ink);
@@ -484,7 +510,9 @@ onBeforeUnmount(() => {
 
   &.flying .loader {
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
+    transition: none;
   }
 }
 

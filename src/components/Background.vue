@@ -1,6 +1,6 @@
 <template>
   <div :class="store.backgroundShow ? 'cover show' : 'cover'">
-    <div class="scene-art" :class="{ 'intro-ready': introReady }">
+    <div class="scene-art">
       <img
         v-show="store.imgLoadStatus"
         class="bg"
@@ -65,6 +65,8 @@ const updateBackgroundShift = () => {
 };
 
 const handleMouseMove = (event) => {
+  if (!introReady.value) return;
+
   const viewportWidth = window.innerWidth || 1;
   const ratio = event.clientX / viewportWidth;
   mouseOffsetRatio.value = (ratio - 0.5) * 2;
@@ -96,7 +98,12 @@ const imgLoadComplete = () => {
 };
 
 watch(introReady, (ready) => {
-  if (ready) emit("loadComplete");
+  if (!ready) return;
+
+  currentOffsetRatio = 0;
+  mouseOffsetRatio.value = 0;
+  bgShiftX.value = "0px";
+  emit("loadComplete");
 });
 
 const imgLoadError = () => {
@@ -148,8 +155,7 @@ onBeforeUnmount(() => {
     aspect-ratio: 16 / 9;
     transform: translate3d(calc(-50% + v-bind(bgShiftX)), -50%, 0);
     scale: 1.08;
-    will-change: transform, filter, scale;
-    filter: blur(8px) brightness(0.92);
+    will-change: transform, scale;
 
     .bg {
       display: block;
@@ -197,21 +203,6 @@ onBeforeUnmount(() => {
       height: auto;
       pointer-events: none;
     }
-
-    &.intro-ready {
-      animation: cinematic-bg-zoom-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;
-    }
-  }
-}
-
-@keyframes cinematic-bg-zoom-in {
-  0% {
-    scale: 1.08;
-    filter: blur(8px) brightness(0.92);
-  }
-  100% {
-    scale: 1;
-    filter: blur(0) brightness(1);
   }
 }
 </style>

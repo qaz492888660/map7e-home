@@ -7,7 +7,11 @@
   <Transition name="fade" mode="out-in">
     <main
       id="main"
-      :class="{ 'previewing-bg': previewActive, 'intro-ready': introReady }"
+      :class="{
+        'previewing-bg': previewActive,
+        'intro-ready': introReady,
+        'intro-revealing': introRevealing,
+      }"
       v-if="store.imgLoadStatus"
     >
       <div class="preview-overlay" :class="{ active: previewActive }" />
@@ -65,9 +69,11 @@ import config from "@/../package.json";
 const store = mainStore();
 let backgroundRevealTimer = null;
 let backgroundFadeTimer = null;
+let introRevealTimer = null;
 const previewActive = ref(false);
 const previewContentHidden = ref(false);
 const introReady = ref(false);
+const introRevealing = ref(false);
 
 // 页面宽度
 const getWidth = () => {
@@ -84,9 +90,15 @@ const loadComplete = () => {
   });
 };
 
-// 悟空落位后直接显示主页，保留主页自身已有的内容进入节奏。
+// 悟空落位后立即显示主页，内容只做短暂淡入。
 const onFlightComplete = () => {
+  if (introRevealTimer) clearTimeout(introRevealTimer);
   introReady.value = true;
+  introRevealing.value = true;
+  introRevealTimer = setTimeout(() => {
+    introRevealing.value = false;
+    introRevealTimer = null;
+  }, 420);
 };
 
 // 监听宽度变化
@@ -177,6 +189,9 @@ onBeforeUnmount(() => {
   if (backgroundFadeTimer) {
     clearTimeout(backgroundFadeTimer);
   }
+  if (introRevealTimer) {
+    clearTimeout(introRevealTimer);
+  }
   window.removeEventListener("resize", getWidth);
 });
 </script>
@@ -201,7 +216,7 @@ onBeforeUnmount(() => {
     &:not(.hidden) {
       opacity: 1;
       transform: translateY(0) scale(1);
-      animation: cinematic-content-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.55s backwards;
+      animation: cinematic-content-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) backwards;
     }
     &.hidden {
       opacity: 0;
@@ -237,17 +252,17 @@ onBeforeUnmount(() => {
   :deep(.right),
   :deep(.box) {
     opacity: 1;
-    animation: cinematic-layer-fade-in 0.9s ease 0.65s backwards;
+    animation: cinematic-layer-fade-in 0.28s ease backwards;
   }
   :deep(.right) {
-    animation-delay: 0.78s;
+    animation-delay: 0.04s;
   }
   :deep(.box) {
-    animation-delay: 0.82s;
+    animation-delay: 0.08s;
   }
   :deep(#footer) {
     opacity: 1;
-    animation: cinematic-layer-fade-in 0.85s ease 0.88s backwards;
+    animation: cinematic-layer-fade-in 0.28s ease 0.1s backwards;
   }
   .menu {
     position: fixed;
@@ -263,7 +278,7 @@ onBeforeUnmount(() => {
     border-radius: 6px;
     transition: transform 0.3s;
     opacity: 1;
-    animation: cinematic-menu-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.9s backwards;
+    animation: cinematic-menu-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0.04s backwards;
     transition:
       opacity 1.3s ease,
       transform 1.35s ease,
@@ -304,7 +319,7 @@ onBeforeUnmount(() => {
       0 0 18px rgba(255, 214, 120, 0.42),
       inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     animation:
-      cinematic-glow-trigger-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.95s backwards,
+      cinematic-glow-trigger-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0.06s backwards,
       glow-pulse 2.4s ease-in-out 1.8s infinite;
     transition:
       transform 0.25s ease,
@@ -402,6 +417,21 @@ onBeforeUnmount(() => {
     .bg-glow-trigger {
       opacity: 0;
       animation: none;
+    }
+  }
+
+  &.intro-revealing {
+    .container,
+    .menu,
+    .bg-glow-trigger {
+      transition: none;
+    }
+
+    :deep(.left),
+    :deep(.right),
+    :deep(.box),
+    :deep(#footer) {
+      transition: none;
     }
   }
 
