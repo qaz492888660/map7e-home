@@ -1,22 +1,42 @@
 <template>
   <div :class="store.backgroundShow ? 'cover show' : 'cover'">
-    <img
-      v-show="store.imgLoadStatus"
-      class="bg"
-      :class="{ 'intro-ready': introReady }"
-      alt="cover"
-      :src="bgUrl"
-      @load="imgLoadComplete"
-      @error.once="imgLoadError"
-      @animationend="imgAnimationEnd"
-    />
+    <div class="scene-art">
+      <img
+        v-show="store.imgLoadStatus"
+        class="bg"
+        alt="cover"
+        :src="bgUrl"
+        @load="imgLoadComplete"
+        @error.once="imgLoadError"
+      />
+      <svg
+        v-if="bgUrl === localSceneBg && store.imgLoadStatus"
+        class="background-flight-trail"
+        viewBox="0 0 3840 2160"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path class="trail-glow" :d="GOKU_FLIGHT_PATH" />
+        <path class="trail-body" :d="GOKU_FLIGHT_PATH" />
+        <path class="trail-core" :d="GOKU_FLIGHT_PATH" />
+      </svg>
+      <img
+        v-if="bgUrl === localSceneBg && store.imgLoadStatus"
+        class="goku"
+        :src="gokuSprite"
+        alt=""
+        aria-hidden="true"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { mainStore } from "@/store";
 import { Error } from "@icon-park/vue-next";
-import localSceneBg from "@/assets/images/background-kame-4k.jpg";
+import localSceneBg from "@/assets/images/background-kame-clean.png";
+import gokuSprite from "@/assets/images/goku-nimbus.png";
+import { GOKU_FLIGHT_PATH } from "@/utils/gokuFlightPath.js";
 
 const props = defineProps({
   introReady: {
@@ -45,6 +65,8 @@ const updateBackgroundShift = () => {
 };
 
 const handleMouseMove = (event) => {
+  if (!introReady.value) return;
+
   const viewportWidth = window.innerWidth || 1;
   const ratio = event.clientX / viewportWidth;
   mouseOffsetRatio.value = (ratio - 0.5) * 2;
@@ -67,14 +89,22 @@ const changeBg = (type) => {
 };
 
 const imgLoadComplete = () => {
-  imgTimeout.value = setTimeout(() => {
-    store.setImgLoadStatus(true);
-  }, Math.floor(Math.random() * 301) + 300);
+  imgTimeout.value = setTimeout(
+    () => {
+      store.setImgLoadStatus(true);
+    },
+    Math.floor(Math.random() * 301) + 300,
+  );
 };
 
-const imgAnimationEnd = () => {
+watch(introReady, (ready) => {
+  if (!ready) return;
+
+  currentOffsetRatio = 0;
+  mouseOffsetRatio.value = 0;
+  bgShiftX.value = "0px";
   emit("loadComplete");
-};
+});
 
 const imgLoadError = () => {
   ElMessage({
@@ -117,36 +147,62 @@ onBeforeUnmount(() => {
     z-index: 1;
   }
 
-  .bg {
+  .scene-art {
     position: absolute;
-    top: 0;
-    left: -32px;
-    width: calc(100% + 64px);
-    height: 100%;
-    object-fit: cover;
-    object-position: center center;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    backface-visibility: visible;
-    transform: translate3d(v-bind(bgShiftX), 0, 0);
+    top: 50%;
+    left: 50%;
+    width: max(calc(100vw + 64px), 177.7778vh);
+    aspect-ratio: 16 / 9;
+    transform: translate3d(calc(-50% + v-bind(bgShiftX)), -50%, 0);
     scale: 1.08;
-    will-change: transform, filter, scale;
-    filter: blur(8px) brightness(0.92);
+    will-change: transform, scale;
 
-    &.intro-ready {
-      animation: cinematic-bg-zoom-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;
+    .bg {
+      display: block;
+      width: 100%;
+      height: 100%;
     }
-  }
-}
 
-@keyframes cinematic-bg-zoom-in {
-  0% {
-    scale: 1.08;
-    filter: blur(8px) brightness(0.92);
-  }
-  100% {
-    scale: 1;
-    filter: blur(0) brightness(1);
+    .background-flight-trail {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+
+      path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .trail-glow {
+        stroke: #ffc928;
+        stroke-width: 54;
+        opacity: 0.28;
+      }
+
+      .trail-body {
+        stroke: #ffe242;
+        stroke-width: 20;
+        opacity: 0.96;
+      }
+
+      .trail-core {
+        stroke: #fff88a;
+        stroke-width: 7;
+      }
+    }
+
+    .goku {
+      position: absolute;
+      left: 58.6%;
+      top: 47.5%;
+      width: 8.6%;
+      height: auto;
+      pointer-events: none;
+    }
   }
 }
 </style>
