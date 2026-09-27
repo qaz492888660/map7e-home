@@ -1,6 +1,6 @@
 <template>
   <!-- 加载 -->
-  <Loading @curtainOpen="onCurtainOpen" />
+  <Loading @flightComplete="onFlightComplete" />
   <!-- 壁纸 -->
   <Background :intro-ready="introReady" @loadComplete="loadComplete" />
   <!-- 主界面 -->
@@ -65,7 +65,6 @@ import config from "@/../package.json";
 const store = mainStore();
 let backgroundRevealTimer = null;
 let backgroundFadeTimer = null;
-let introRevealTimer = null;
 const previewActive = ref(false);
 const previewContentHidden = ref(false);
 const introReady = ref(false);
@@ -85,13 +84,9 @@ const loadComplete = () => {
   });
 };
 
-// 悟空落位后才开始云幕；主页仍按云幕原有的相对节奏显现。
-const onCurtainOpen = () => {
-  if (introRevealTimer) clearTimeout(introRevealTimer);
-  introRevealTimer = setTimeout(() => {
-    introReady.value = true;
-    introRevealTimer = null;
-  }, 1470);
+// 悟空落位后直接显示主页，保留主页自身已有的内容进入节奏。
+const onFlightComplete = () => {
+  introReady.value = true;
 };
 
 // 监听宽度变化
@@ -181,9 +176,6 @@ onBeforeUnmount(() => {
   }
   if (backgroundFadeTimer) {
     clearTimeout(backgroundFadeTimer);
-  }
-  if (introRevealTimer) {
-    clearTimeout(introRevealTimer);
   }
   window.removeEventListener("resize", getWidth);
 });
@@ -420,8 +412,13 @@ onBeforeUnmount(() => {
     pointer-events: none;
     opacity: 0;
     backdrop-filter: none;
-    background:
-      radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 26%, rgba(18, 14, 30, 0.08) 58%, rgba(18, 14, 30, 0.02) 100%);
+    background: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.03) 26%,
+      rgba(18, 14, 30, 0.08) 58%,
+      rgba(18, 14, 30, 0.02) 100%
+    );
     &.active {
       animation: preview-overlay-fade 2.1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
     }
