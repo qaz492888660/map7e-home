@@ -23,15 +23,16 @@
             <path class="trail-core" :d="GOKU_FLIGHT_PATH" />
           </g>
           <g ref="flightRiderRef" class="flight-rider">
-            <image
-              :href="gokuSprite"
-              :x="-GOKU_SPRITE_WIDTH / 2"
-              :y="-GOKU_SPRITE_HEIGHT / 2"
-              :width="GOKU_SPRITE_WIDTH"
-              :height="GOKU_SPRITE_HEIGHT"
-              transform="scale(-1 1)"
-              preserveAspectRatio="none"
-            />
+            <g ref="flightPoseRef" class="flight-pose">
+              <image
+                :href="gokuSprite"
+                :x="-GOKU_SPRITE_WIDTH / 2"
+                :y="-GOKU_SPRITE_HEIGHT / 2"
+                :width="GOKU_SPRITE_WIDTH"
+                :height="GOKU_SPRITE_HEIGHT"
+                preserveAspectRatio="none"
+              />
+            </g>
           </g>
           <g class="settled-rider">
             <image
@@ -90,6 +91,7 @@ import {
   GOKU_FINAL_X,
   GOKU_FINAL_Y,
   GOKU_FLIGHT_PATH,
+  GOKU_SPRITE_HEADING_DEG,
   GOKU_SCENE_HEIGHT,
   GOKU_SCENE_WIDTH,
   GOKU_SPRITE_HEIGHT,
@@ -108,13 +110,19 @@ const spriteFailed = ref(false);
 const flightPathRef = ref(null);
 const flightTrailRef = ref(null);
 const flightRiderRef = ref(null);
+const flightPoseRef = ref(null);
 let flightFallbackTimer = null;
 let flightFrameId = 0;
 let pathLength = 0;
 let flightStartLength = 0;
 let flightStartTime = 0;
 let flightDuration = 3100;
-let lastRiderAngle = null;
+
+const normalizeAngle = (angle) => {
+  let normalized = ((((angle + 180) % 360) + 360) % 360) - 180;
+  if (normalized === -180) normalized = 180;
+  return normalized;
+};
 
 const openCurtain = () => {
   if (curtainOpen.value) return;
@@ -127,29 +135,32 @@ const setFlightProgress = (progress) => {
   const path = flightPathRef.value;
   const trail = flightTrailRef.value;
   const rider = flightRiderRef.value;
-  if (!path || !trail || !rider || !pathLength) return;
+  const pose = flightPoseRef.value;
+  if (!path || !trail || !rider || !pose || !pathLength) return;
 
   const distance = flightStartLength + (pathLength - flightStartLength) * progress;
   const point = path.getPointAtLength(distance);
   const before = path.getPointAtLength(Math.max(flightStartLength, distance - 3));
   const after = path.getPointAtLength(Math.min(pathLength, distance + 3));
-  let angle = (Math.atan2(after.y - before.y, after.x - before.x) * 180) / Math.PI;
-
-  // Keep the tangent continuous across the SVG angle wrap, so turns never
-  // become an accidental full spin.
-  if (lastRiderAngle !== null) {
-    while (angle - lastRiderAngle > 180) angle -= 360;
-    while (angle - lastRiderAngle < -180) angle += 360;
-  }
-  lastRiderAngle = angle;
+  const tangent = normalizeAngle(
+    (Math.atan2(after.y - before.y, after.x - before.x) * 180) / Math.PI,
+  );
+  const nativeHeading = normalizeAngle(GOKU_SPRITE_HEADING_DEG);
+  const mirroredHeading = normalizeAngle(180 - nativeHeading);
+  const nativeBank = normalizeAngle(tangent - nativeHeading);
+  const mirroredBank = normalizeAngle(tangent - mirroredHeading);
+  // Use whichever artwork facing needs the smaller bank. The extracted sprite
+  // remains upright and forward-facing through the hairpin instead of rolling
+  // through a full 360-degree image rotation.
+  const isMirrored = Math.abs(mirroredBank) < Math.abs(nativeBank);
+  const bank = progress === 1 ? 0 : isMirrored ? mirroredBank : nativeBank;
+  const facingScaleX = progress === 1 ? 1 : isMirrored ? -1 : 1;
 
   const scale = 0.82 + 0.18 * progress;
   const riderX = progress === 1 ? GOKU_FINAL_X : point.x;
   const riderY = progress === 1 ? GOKU_FINAL_Y : point.y;
-  rider.setAttribute(
-    "transform",
-    `translate(${riderX} ${riderY}) rotate(${angle}) scale(${scale})`,
-  );
+  rider.setAttribute("transform", `translate(${riderX} ${riderY}) scale(${scale})`);
+  pose.setAttribute("transform", `rotate(${bank}) scale(${facingScaleX} 1)`);
   trail.style.strokeDashoffset = `${Math.max(0, pathLength - distance)}`;
 };
 
@@ -201,7 +212,6 @@ const beginFlight = async () => {
 
   pathLength = path.getTotalLength();
   flightStartLength = findVisiblePathStart(path, pathLength);
-  lastRiderAngle = null;
   trail.style.strokeDasharray = `${pathLength} ${pathLength}`;
   trail.style.strokeDashoffset = `${pathLength - flightStartLength}`;
   flightStarted.value = true;

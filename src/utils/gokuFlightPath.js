@@ -3,6 +3,9 @@ export const GOKU_SCENE_HEIGHT = 2160;
 
 export const GOKU_SPRITE_WIDTH = GOKU_SCENE_WIDTH * 0.086;
 export const GOKU_SPRITE_HEIGHT = GOKU_SPRITE_WIDTH * (426 / 659);
+// The extracted artwork already leans along the final painted streak. Keeping
+// its native heading makes the landing pose match the static background art.
+export const GOKU_SPRITE_HEADING_DEG = 160;
 export const GOKU_FINAL_LEFT = GOKU_SCENE_WIDTH * 0.586;
 export const GOKU_FINAL_TOP = GOKU_SCENE_HEIGHT * 0.475;
 export const GOKU_FINAL_X = GOKU_FINAL_LEFT + GOKU_SPRITE_WIDTH / 2;
