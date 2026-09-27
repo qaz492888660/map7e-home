@@ -34,6 +34,11 @@
               />
             </g>
           </g>
+          <g ref="foregroundTrailRef" class="foreground-trail">
+            <path class="trail-glow" :d="GOKU_FLIGHT_PATH" />
+            <path class="trail-body" :d="GOKU_FLIGHT_PATH" />
+            <path class="trail-core" :d="GOKU_FLIGHT_PATH" />
+          </g>
           <g class="settled-rider">
             <image
               :href="gokuSprite"
@@ -70,7 +75,6 @@ import {
   GOKU_FINAL_X,
   GOKU_FINAL_Y,
   GOKU_FLIGHT_PATH,
-  GOKU_SPRITE_HEADING_DEG,
   GOKU_SCENE_HEIGHT,
   GOKU_SCENE_WIDTH,
   GOKU_SPRITE_HEIGHT,
@@ -88,6 +92,7 @@ const spriteReady = ref(false);
 const spriteFailed = ref(false);
 const flightPathRef = ref(null);
 const flightTrailRef = ref(null);
+const foregroundTrailRef = ref(null);
 const flightRiderRef = ref(null);
 const flightPoseRef = ref(null);
 let flightFallbackTimer = null;
@@ -96,42 +101,18 @@ let pathLength = 0;
 let flightStartLength = 0;
 let flightStartTime = 0;
 let flightDuration = 3100;
-let portraitFacingEnabled = false;
-let facingMirrored = false;
-let facingInitialized = false;
 
-const normalizeAngle = (angle) => {
-  let normalized = ((((angle + 180) % 360) + 360) % 360) - 180;
-  if (normalized === -180) normalized = 180;
-  return normalized;
-};
-
-const mirroredSpriteHeading = normalizeAngle(180 - GOKU_SPRITE_HEADING_DEG);
-
-const prefersMirroredFacing = (tangent) => {
-  const nativeOffset = Math.abs(normalizeAngle(tangent - GOKU_SPRITE_HEADING_DEG));
-  const mirroredOffset = Math.abs(normalizeAngle(tangent - mirroredSpriteHeading));
-  return mirroredOffset < nativeOffset;
-};
-
-const isSpriteOutsideViewport = (point, scale) => {
-  const art = document.querySelector(".loader-scene-art");
-  if (!art) return false;
-
-  const rect = art.getBoundingClientRect();
-  if (!rect.width || !rect.height) return false;
-
-  const centerX = rect.left + (point.x / GOKU_SCENE_WIDTH) * rect.width;
-  const centerY = rect.top + (point.y / GOKU_SCENE_HEIGHT) * rect.height;
-  const halfWidth = (GOKU_SPRITE_WIDTH * scale * rect.width) / GOKU_SCENE_WIDTH / 2;
-  const halfHeight = (GOKU_SPRITE_HEIGHT * scale * rect.height) / GOKU_SCENE_HEIGHT / 2;
-
-  return (
-    centerX + halfWidth <= 0 ||
-    centerX - halfWidth >= window.innerWidth ||
-    centerY + halfHeight <= 0 ||
-    centerY - halfHeight >= window.innerHeight
-  );
+// These arclengths bracket the short outside limb of the existing hook. The
+// return limb passes within one sprite height of it from 3247 to about 3386.
+const FOREGROUND_TRAIL_START = 3167;
+const FOREGROUND_TRAIL_END = 3247;
+const FOREGROUND_OCCLUSION_START = 3247;
+const FOREGROUND_OCCLUSION_FULL = 3265;
+const FOREGROUND_OCCLUSION_FADE_START = 3350;
+const FOREGROUND_OCCLUSION_END = 3386;
+const smoothstep = (value) => {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
 };
 
 const completeFlight = () => {
@@ -144,45 +125,33 @@ const completeFlight = () => {
 const setFlightProgress = (progress) => {
   const path = flightPathRef.value;
   const trail = flightTrailRef.value;
+  const foregroundTrail = foregroundTrailRef.value;
   const rider = flightRiderRef.value;
   const pose = flightPoseRef.value;
-  if (!path || !trail || !rider || !pose || !pathLength) return;
+  if (!path || !trail || !foregroundTrail || !rider || !pose || !pathLength) return;
 
   const distance = flightStartLength + (pathLength - flightStartLength) * progress;
   const point = path.getPointAtLength(distance);
-  const before = path.getPointAtLength(Math.max(flightStartLength, distance - 3));
-  const after = path.getPointAtLength(Math.min(pathLength, distance + 3));
-  const tangent = normalizeAngle(
-    (Math.atan2(after.y - before.y, after.x - before.x) * 180) / Math.PI,
-  );
   const scale = 0.82 + 0.18 * progress;
   const riderX = progress === 1 ? GOKU_FINAL_X : point.x;
   const riderY = progress === 1 ? GOKU_FINAL_Y : point.y;
 
-  // On a portrait screen the first visible leg travels right while the sprite's
-  // native cloud trail points left. The turn is outside the crop, so change
-  // facing only there; never flip the rider while it is visible.
-  if (portraitFacingEnabled) {
-    const preferredFacing = prefersMirroredFacing(tangent);
-    if (!facingInitialized) {
-      facingMirrored = preferredFacing;
-      facingInitialized = true;
-    } else if (preferredFacing !== facingMirrored && isSpriteOutsideViewport(point, scale)) {
-      facingMirrored = preferredFacing;
-    }
-  }
-
-  const spriteHeading = facingMirrored ? mirroredSpriteHeading : GOKU_SPRITE_HEADING_DEG;
-  const tangentOffset = normalizeAngle(tangent - spriteHeading);
-  const maxBank = 14;
-  const tangentBank = Math.max(-maxBank, Math.min(maxBank, tangentOffset * 0.18));
-  const settleProgress = Math.max(0, Math.min(1, (progress - 0.78) / 0.22));
-  const settleEase = settleProgress * settleProgress * (3 - 2 * settleProgress);
-  const bank = progress === 1 ? 0 : tangentBank * (1 - settleEase);
-
   rider.setAttribute("transform", `translate(${riderX} ${riderY}) scale(${scale})`);
-  pose.setAttribute("transform", `rotate(${bank}) scale(${facingMirrored ? -1 : 1} 1)`);
+  // The source Nimbus trails to the right, so mirror it once for the whole
+  // left-to-right flight. Keep one level pose through the bend; the static art
+  // returns during the existing short crossfade at the landing point.
+  pose.setAttribute("transform", "scale(-1 1)");
   trail.style.strokeDashoffset = `${Math.max(0, pathLength - distance)}`;
+
+  const fadeIn = smoothstep(
+    (distance - FOREGROUND_OCCLUSION_START) /
+      (FOREGROUND_OCCLUSION_FULL - FOREGROUND_OCCLUSION_START),
+  );
+  const fadeOut = smoothstep(
+    (FOREGROUND_OCCLUSION_END - distance) /
+      (FOREGROUND_OCCLUSION_END - FOREGROUND_OCCLUSION_FADE_START),
+  );
+  foregroundTrail.style.opacity = `${Math.min(fadeIn, fadeOut)}`;
 };
 
 const findVisiblePathStart = (path, length) => {
@@ -226,18 +195,19 @@ const beginFlight = async () => {
   await nextTick();
   const path = flightPathRef.value;
   const trail = flightTrailRef.value;
-  if (!path || !trail || typeof path.getTotalLength !== "function") {
+  const foregroundTrail = foregroundTrailRef.value;
+  if (!path || !trail || !foregroundTrail || typeof path.getTotalLength !== "function") {
     finishFlight();
     return;
   }
 
   pathLength = path.getTotalLength();
   flightStartLength = findVisiblePathStart(path, pathLength);
-  portraitFacingEnabled = window.innerHeight > window.innerWidth;
-  facingMirrored = false;
-  facingInitialized = false;
   trail.style.strokeDasharray = `${pathLength} ${pathLength}`;
   trail.style.strokeDashoffset = `${pathLength - flightStartLength}`;
+  const foregroundLength = FOREGROUND_TRAIL_END - FOREGROUND_TRAIL_START;
+  foregroundTrail.style.strokeDasharray = `${foregroundLength} ${pathLength - foregroundLength}`;
+  foregroundTrail.style.strokeDashoffset = `${pathLength - FOREGROUND_TRAIL_START}`;
   flightStarted.value = true;
   trail.classList.add("is-visible");
   setFlightProgress(0);
@@ -335,7 +305,8 @@ onBeforeUnmount(() => {
       overflow: visible;
       pointer-events: none;
 
-      .flight-trail {
+      .flight-trail,
+      .foreground-trail {
         opacity: 0;
 
         path {
@@ -362,10 +333,14 @@ onBeforeUnmount(() => {
           stroke: #fff88a;
           stroke-width: 7;
         }
+      }
 
-        &.is-visible {
-          opacity: 1;
-        }
+      .flight-trail.is-visible {
+        opacity: 1;
+      }
+
+      .foreground-trail {
+        pointer-events: none;
       }
 
       .flight-rider,
