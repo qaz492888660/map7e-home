@@ -62,28 +62,35 @@ const flightActive = ref(false);
 const curtainOpen = ref(false);
 const spriteReady = ref(false);
 const spriteFailed = ref(false);
+let flightFallbackTimer = null;
 
-const skipFlight = () => {
+const openCurtain = () => {
   if (curtainOpen.value) return;
+  clearTimeout(flightFallbackTimer);
   curtainOpen.value = true;
   emit("curtainOpen");
 };
 
 const finishFlight = (event) => {
-  if (event.animationName !== "goku-flight" || curtainOpen.value) return;
-  curtainOpen.value = true;
-  emit("curtainOpen");
+  // Vue scoped CSS adds a hash suffix to keyframe names in the built CSS.
+  if (event.animationName.startsWith("goku-flight")) openCurtain();
 };
 
 watch(
   [() => store.imgLoadStatus, spriteReady, spriteFailed],
   ([ready, spriteLoaded, failed]) => {
     if (!ready) return;
-    if (failed) skipFlight();
-    else if (spriteLoaded) flightActive.value = true;
+    if (failed) openCurtain();
+    else if (spriteLoaded && !flightActive.value) {
+      flightActive.value = true;
+      // Animation events can be dropped when a mobile tab is suspended.
+      flightFallbackTimer = setTimeout(openCurtain, 3450);
+    }
   },
   { immediate: true },
 );
+
+onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
 </script>
 
 <style lang="scss" scoped>
@@ -474,10 +481,6 @@ watch(
     opacity: 0;
     visibility: hidden;
 
-    .loader {
-      animation: loader-release 0.55s ease forwards;
-    }
-
     .cloud-curtain-left {
       animation:
         curtain-appear 0.25s ease-out forwards,
@@ -494,6 +497,10 @@ watch(
   &.flying .loader {
     opacity: 0;
     pointer-events: none;
+  }
+
+  &.loaded:not(.flying) .loader {
+    animation: loader-release 0.55s ease forwards;
   }
 }
 
