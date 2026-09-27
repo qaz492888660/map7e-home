@@ -25,11 +25,26 @@
           <g ref="flightRiderRef" class="flight-rider">
             <g ref="flightPoseRef" class="flight-pose">
               <image
+                ref="flightPoseMirroredRef"
+                class="flight-pose-mirrored"
                 :href="gokuSprite"
                 :x="-GOKU_SPRITE_WIDTH / 2"
                 :y="-GOKU_SPRITE_HEIGHT / 2"
                 :width="GOKU_SPRITE_WIDTH"
                 :height="GOKU_SPRITE_HEIGHT"
+                transform="scale(-1 1)"
+                opacity="1"
+                preserveAspectRatio="none"
+              />
+              <image
+                ref="flightPoseInwardRef"
+                class="flight-pose-inward"
+                :href="gokuSprite"
+                :x="-GOKU_SPRITE_WIDTH / 2"
+                :y="-GOKU_SPRITE_HEIGHT / 2"
+                :width="GOKU_SPRITE_WIDTH"
+                :height="GOKU_SPRITE_HEIGHT"
+                opacity="0"
                 preserveAspectRatio="none"
               />
             </g>
@@ -95,6 +110,8 @@ const flightTrailRef = ref(null);
 const foregroundTrailRef = ref(null);
 const flightRiderRef = ref(null);
 const flightPoseRef = ref(null);
+const flightPoseMirroredRef = ref(null);
+const flightPoseInwardRef = ref(null);
 let flightFallbackTimer = null;
 let flightFrameId = 0;
 let pathLength = 0;
@@ -110,6 +127,12 @@ const FOREGROUND_OCCLUSION_START = 3247;
 const FOREGROUND_OCCLUSION_FULL = 3265;
 const FOREGROUND_OCCLUSION_FADE_START = 3350;
 const FOREGROUND_OCCLUSION_END = 3386;
+// The existing hook turns from 32° to 136° between these tangent headings.
+// Use that real bend to time one short facing crossfade, then hold the native
+// left-facing artwork through the inward return limb.
+const TURN_START_HEADING_DEG = 32;
+const TURN_END_HEADING_DEG = 136;
+const MAX_TURN_BANK_DEG = 10;
 const smoothstep = (value) => {
   const t = Math.max(0, Math.min(1, value));
   return t * t * (3 - 2 * t);
@@ -128,19 +151,41 @@ const setFlightProgress = (progress) => {
   const foregroundTrail = foregroundTrailRef.value;
   const rider = flightRiderRef.value;
   const pose = flightPoseRef.value;
-  if (!path || !trail || !foregroundTrail || !rider || !pose || !pathLength) return;
+  const mirroredPose = flightPoseMirroredRef.value;
+  const inwardPose = flightPoseInwardRef.value;
+  if (
+    !path ||
+    !trail ||
+    !foregroundTrail ||
+    !rider ||
+    !pose ||
+    !mirroredPose ||
+    !inwardPose ||
+    !pathLength
+  )
+    return;
 
   const distance = flightStartLength + (pathLength - flightStartLength) * progress;
   const point = path.getPointAtLength(distance);
+  const tangentStart = path.getPointAtLength(Math.max(0, distance - 8));
+  const tangentEnd = path.getPointAtLength(Math.min(pathLength, distance + 8));
+  const tangentHeading =
+    (Math.atan2(tangentEnd.y - tangentStart.y, tangentEnd.x - tangentStart.x) * 180) / Math.PI;
+  const turnProgress = smoothstep(
+    (tangentHeading - TURN_START_HEADING_DEG) / (TURN_END_HEADING_DEG - TURN_START_HEADING_DEG),
+  );
   const scale = 0.82 + 0.18 * progress;
   const riderX = progress === 1 ? GOKU_FINAL_X : point.x;
   const riderY = progress === 1 ? GOKU_FINAL_Y : point.y;
 
   rider.setAttribute("transform", `translate(${riderX} ${riderY}) scale(${scale})`);
-  // The source Nimbus trails to the right, so mirror it once for the whole
-  // left-to-right flight. Keep one level pose through the bend; the static art
-  // returns during the existing short crossfade at the landing point.
-  pose.setAttribute("transform", "scale(-1 1)");
+  // Keep the mirrored left-to-right entrance, then briefly crossfade into the
+  // source's native left-facing pose as the path turns back into its inner arc.
+  // A small S-shaped bank suggests the turn without following every tangent.
+  mirroredPose.style.opacity = `${1 - turnProgress}`;
+  inwardPose.style.opacity = `${turnProgress}`;
+  const bank = Math.sin(turnProgress * Math.PI * 2) * MAX_TURN_BANK_DEG;
+  pose.setAttribute("transform", `rotate(${bank.toFixed(2)})`);
   trail.style.strokeDashoffset = `${Math.max(0, pathLength - distance)}`;
 
   const fadeIn = smoothstep(
