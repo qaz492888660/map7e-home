@@ -1,22 +1,30 @@
 <template>
   <div :class="store.backgroundShow ? 'cover show' : 'cover'">
-    <img
-      v-show="store.imgLoadStatus"
-      class="bg"
-      :class="{ 'intro-ready': introReady }"
-      alt="cover"
-      :src="bgUrl"
-      @load="imgLoadComplete"
-      @error.once="imgLoadError"
-      @animationend="imgAnimationEnd"
-    />
+    <div class="scene-art" :class="{ 'intro-ready': introReady }">
+      <img
+        v-show="store.imgLoadStatus"
+        class="bg"
+        alt="cover"
+        :src="bgUrl"
+        @load="imgLoadComplete"
+        @error.once="imgLoadError"
+      />
+      <img
+        v-if="bgUrl === localSceneBg && store.imgLoadStatus"
+        class="goku"
+        :src="gokuSprite"
+        alt=""
+        aria-hidden="true"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { mainStore } from "@/store";
 import { Error } from "@icon-park/vue-next";
-import localSceneBg from "@/assets/images/background-kame-4k.jpg";
+import localSceneBg from "@/assets/images/background-kame-clean.png";
+import gokuSprite from "@/assets/images/goku-nimbus.png";
 
 const props = defineProps({
   introReady: {
@@ -72,9 +80,9 @@ const imgLoadComplete = () => {
   }, Math.floor(Math.random() * 301) + 300);
 };
 
-const imgAnimationEnd = () => {
-  emit("loadComplete");
-};
+watch(introReady, (ready) => {
+  if (ready) emit("loadComplete");
+});
 
 const imgLoadError = () => {
   ElMessage({
@@ -117,21 +125,31 @@ onBeforeUnmount(() => {
     z-index: 1;
   }
 
-  .bg {
+  .scene-art {
     position: absolute;
-    top: 0;
-    left: -32px;
-    width: calc(100% + 64px);
-    height: 100%;
-    object-fit: cover;
-    object-position: center center;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    backface-visibility: visible;
-    transform: translate3d(v-bind(bgShiftX), 0, 0);
+    top: 50%;
+    left: 50%;
+    width: max(calc(100vw + 64px), 177.7778vh);
+    aspect-ratio: 16 / 9;
+    transform: translate3d(calc(-50% + v-bind(bgShiftX)), -50%, 0);
     scale: 1.08;
     will-change: transform, filter, scale;
     filter: blur(8px) brightness(0.92);
+
+    .bg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .goku {
+      position: absolute;
+      left: 58.6%;
+      top: 47.5%;
+      width: 8.6%;
+      height: auto;
+      pointer-events: none;
+    }
 
     &.intro-ready {
       animation: cinematic-bg-zoom-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s forwards;

@@ -1,6 +1,6 @@
 <template>
   <!-- 加载 -->
-  <Loading />
+  <Loading @curtainOpen="onCurtainOpen" />
   <!-- 壁纸 -->
   <Background :intro-ready="introReady" @loadComplete="loadComplete" />
   <!-- 主界面 -->
@@ -85,20 +85,14 @@ const loadComplete = () => {
   });
 };
 
-// 开场云幕进入第二段拉开时，只执行一次主页朦胧转清晰
-watch(
-  () => store.imgLoadStatus,
-  (loaded) => {
-    if (!loaded) return;
-    if (introRevealTimer) clearTimeout(introRevealTimer);
-    introReady.value = false;
-    introRevealTimer = setTimeout(() => {
-      introReady.value = true;
-      introRevealTimer = null;
-    }, 1220);
-  },
-  { immediate: true },
-);
+// 悟空落位后才开始云幕；主页仍按云幕原有的相对节奏显现。
+const onCurtainOpen = () => {
+  if (introRevealTimer) clearTimeout(introRevealTimer);
+  introRevealTimer = setTimeout(() => {
+    introReady.value = true;
+    introRevealTimer = null;
+  }, 1470);
+};
 
 // 监听宽度变化
 watch(

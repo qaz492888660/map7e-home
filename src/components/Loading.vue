@@ -1,7 +1,18 @@
 <template>
-  <div id="loader-wrapper" :class="{ loaded: store.imgLoadStatus }">
+  <div id="loader-wrapper" :class="{ flying: flightActive, loaded: curtainOpen }">
     <div class="loader-scene" aria-hidden="true">
-      <img class="loader-scene-image" :src="loadingBg" alt="" />
+      <div class="loader-scene-art">
+        <img class="loader-scene-image" :src="loadingBg" alt="" />
+        <img
+          class="loader-goku"
+          :class="{ 'is-flying': flightActive }"
+          :src="gokuSprite"
+          alt=""
+          @load="spriteReady = true"
+          @error="spriteFailed = true"
+          @animationend="finishFlight"
+        />
+      </div>
       <div class="loader-scene-glow" />
     </div>
 
@@ -41,10 +52,38 @@
 
 <script setup>
 import { mainStore } from "@/store";
-import loadingBg from "@/assets/images/background-kame-4k.jpg";
+import loadingBg from "@/assets/images/background-kame-clean.png";
+import gokuSprite from "@/assets/images/goku-nimbus.png";
 
 const store = mainStore();
 const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
+const emit = defineEmits(["curtainOpen"]);
+const flightActive = ref(false);
+const curtainOpen = ref(false);
+const spriteReady = ref(false);
+const spriteFailed = ref(false);
+
+const skipFlight = () => {
+  if (curtainOpen.value) return;
+  curtainOpen.value = true;
+  emit("curtainOpen");
+};
+
+const finishFlight = (event) => {
+  if (event.animationName !== "goku-flight" || curtainOpen.value) return;
+  curtainOpen.value = true;
+  emit("curtainOpen");
+};
+
+watch(
+  [() => store.imgLoadStatus, spriteReady, spriteFailed],
+  ([ready, spriteLoaded, failed]) => {
+    if (!ready) return;
+    if (failed) skipFlight();
+    else if (spriteLoaded) flightActive.value = true;
+  },
+  { immediate: true },
+);
 </script>
 
 <style lang="scss" scoped>
@@ -67,8 +106,8 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
   visibility: visible;
   isolation: isolate;
   transition:
-    opacity 0.26s 1.78s ease,
-    visibility 0s 2.08s;
+    opacity 0.26s 2.03s ease,
+    visibility 0s 2.33s;
 
   .loader-scene {
     position: absolute;
@@ -77,16 +116,37 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
     overflow: hidden;
     background: #6d91d8;
 
-    .loader-scene-image {
+    .loader-scene-art {
       position: absolute;
-      inset: -2%;
-      width: 104%;
-      height: 104%;
-      object-fit: cover;
-      object-position: center center;
-      transform: scale(1.055);
+      left: 50%;
+      top: 50%;
+      width: max(calc(100vw + 64px), 177.7778vh);
+      aspect-ratio: 16 / 9;
+      transform: translate(-50%, -50%);
       filter: saturate(1.03) brightness(1.03);
-      animation: scene-breathe 4.8s ease-in-out infinite alternate;
+    }
+
+    .loader-scene-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .loader-goku {
+      position: absolute;
+      left: 58.6%;
+      top: 47.5%;
+      width: 8.6%;
+      height: auto;
+      opacity: 0;
+      transform: translateZ(0);
+      transform-origin: 42% 70%;
+      backface-visibility: hidden;
+      will-change: left, top, transform;
+
+      &.is-flying {
+        animation: goku-flight 3.1s linear both;
+      }
     }
 
     .loader-scene-glow {
@@ -222,6 +282,7 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
     pointer-events: none;
     will-change: transform, opacity, filter;
     transform-origin: center center;
+    opacity: 0;
 
     &::before {
       content: "";
@@ -418,13 +479,67 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
     }
 
     .cloud-curtain-left {
-      animation: curtain-open-left 1.95s forwards;
+      animation:
+        curtain-appear 0.25s ease-out forwards,
+        curtain-open-left 1.95s 0.25s forwards;
     }
 
     .cloud-curtain-right {
-      animation: curtain-open-right 1.95s forwards;
+      animation:
+        curtain-appear 0.25s ease-out forwards,
+        curtain-open-right 1.95s 0.25s forwards;
     }
   }
+
+  &.flying .loader {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes goku-flight {
+  0% {
+    left: -12%;
+    top: 34%;
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(0.78) rotate(-8deg);
+  }
+  23% {
+    left: 17%;
+    top: 27%;
+    transform: translate3d(0, 0, 0) scale(0.88) rotate(-10deg);
+  }
+  49% {
+    left: 54%;
+    top: 18%;
+    transform: translate3d(0, 0, 0) scale(0.95) rotate(2deg);
+  }
+  68% {
+    left: 76%;
+    top: 22%;
+    transform: translate3d(0, 0, 0) scale(0.87) rotate(32deg);
+  }
+  80% {
+    left: 79%;
+    top: 33%;
+    transform: translate3d(0, 0, 0) scale(0.84) rotate(115deg);
+  }
+  90% {
+    left: 68%;
+    top: 41%;
+    transform: translate3d(0, 0, 0) scale(0.94) rotate(270deg);
+  }
+  100% {
+    left: 58.6%;
+    top: 47.5%;
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(360deg);
+  }
+}
+
+@keyframes curtain-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes spin {
@@ -632,6 +747,9 @@ const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
 
 @media (prefers-reduced-motion: reduce) {
   #loader-wrapper {
+    .loader-goku.is-flying {
+      animation-duration: 0.01s !important;
+    }
     .loader-scene-image,
     .loader-ring,
     .cloud-knot {
