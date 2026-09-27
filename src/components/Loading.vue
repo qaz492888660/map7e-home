@@ -499,35 +499,45 @@ watch(
 
 @keyframes goku-flight {
   0% {
-    left: -12%;
-    top: 34%;
+    left: -8.2%;
+    top: 33%;
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(0.78) rotate(-8deg);
   }
-  23% {
-    left: 17%;
-    top: 27%;
+  20% {
+    left: 12.6%;
+    top: 26.4%;
     transform: translate3d(0, 0, 0) scale(0.88) rotate(-10deg);
   }
-  49% {
-    left: 54%;
-    top: 18%;
+  45% {
+    left: 47.8%;
+    top: 17.7%;
     transform: translate3d(0, 0, 0) scale(0.95) rotate(2deg);
   }
-  68% {
-    left: 76%;
-    top: 22%;
-    transform: translate3d(0, 0, 0) scale(0.87) rotate(32deg);
+  60% {
+    left: 66%;
+    top: 18.75%;
+    transform: translate3d(0, 0, 0) scale(0.9) rotate(12deg);
   }
-  80% {
-    left: 79%;
-    top: 33%;
-    transform: translate3d(0, 0, 0) scale(0.84) rotate(115deg);
+  70% {
+    left: 76.4%;
+    top: 26.1%;
+    transform: translate3d(0, 0, 0) scale(0.87) rotate(40deg);
   }
-  90% {
-    left: 68%;
-    top: 41%;
-    transform: translate3d(0, 0, 0) scale(0.94) rotate(270deg);
+  78% {
+    left: 76.4%;
+    top: 31.7%;
+    transform: translate3d(0, 0, 0) scale(0.84) rotate(130deg);
+  }
+  88% {
+    left: 69.9%;
+    top: 39.1%;
+    transform: translate3d(0, 0, 0) scale(0.91) rotate(260deg);
+  }
+  96% {
+    left: 60.8%;
+    top: 45.1%;
+    transform: translate3d(0, 0, 0) scale(0.98) rotate(345deg);
   }
   100% {
     left: 58.6%;
@@ -668,6 +678,57 @@ watch(
 }
 
 @media (max-width: 720px) {
+  // 竖屏只显示原图中部；从裁切后的可见左边缘进入，再沿原图轨迹绕行。
+  @keyframes goku-flight {
+    0% {
+      left: 32%;
+      top: 20.5%;
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(0.78) rotate(-8deg);
+    }
+    25% {
+      left: 43%;
+      top: 19%;
+      transform: translate3d(0, 0, 0) scale(0.88) rotate(-6deg);
+    }
+    45% {
+      left: 53%;
+      top: 17.5%;
+      transform: translate3d(0, 0, 0) scale(0.95) rotate(2deg);
+    }
+    60% {
+      left: 66%;
+      top: 18.75%;
+      transform: translate3d(0, 0, 0) scale(0.9) rotate(12deg);
+    }
+    70% {
+      left: 76.4%;
+      top: 26.1%;
+      transform: translate3d(0, 0, 0) scale(0.87) rotate(40deg);
+    }
+    78% {
+      left: 76.4%;
+      top: 31.7%;
+      transform: translate3d(0, 0, 0) scale(0.84) rotate(130deg);
+    }
+    88% {
+      left: 69.9%;
+      top: 39.1%;
+      transform: translate3d(0, 0, 0) scale(0.91) rotate(260deg);
+    }
+    96% {
+      left: 60.8%;
+      top: 45.1%;
+      transform: translate3d(0, 0, 0) scale(0.98) rotate(345deg);
+    }
+    100% {
+      left: 58.6%;
+      top: 47.5%;
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1) rotate(360deg);
+    }
+  }
+
   #loader-wrapper {
     .loader {
       transform: translateY(-3vh);
