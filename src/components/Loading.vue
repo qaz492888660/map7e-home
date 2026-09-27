@@ -4,14 +4,46 @@
       <div class="loader-scene-art">
         <img class="loader-scene-image" :src="loadingBg" alt="" />
         <img
-          class="loader-goku"
-          :class="{ 'is-flying': flightActive }"
+          class="loader-sprite-preload"
           :src="gokuSprite"
           alt=""
           @load="spriteReady = true"
           @error="spriteFailed = true"
-          @animationend="finishFlight"
         />
+        <svg
+          class="loader-flight-svg"
+          :class="{ 'flight-started': flightStarted, settled: flightSettled }"
+          viewBox="0 0 3840 2160"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <g ref="flightTrailRef" class="flight-trail">
+            <path ref="flightPathRef" class="trail-glow" :d="GOKU_FLIGHT_PATH" />
+            <path class="trail-body" :d="GOKU_FLIGHT_PATH" />
+            <path class="trail-core" :d="GOKU_FLIGHT_PATH" />
+          </g>
+          <g ref="flightRiderRef" class="flight-rider">
+            <image
+              :href="gokuSprite"
+              :x="-GOKU_SPRITE_WIDTH / 2"
+              :y="-GOKU_SPRITE_HEIGHT / 2"
+              :width="GOKU_SPRITE_WIDTH"
+              :height="GOKU_SPRITE_HEIGHT"
+              transform="scale(-1 1)"
+              preserveAspectRatio="none"
+            />
+          </g>
+          <g class="settled-rider">
+            <image
+              :href="gokuSprite"
+              :x="GOKU_FINAL_LEFT"
+              :y="GOKU_FINAL_TOP"
+              :width="GOKU_SPRITE_WIDTH"
+              :height="GOKU_SPRITE_HEIGHT"
+              preserveAspectRatio="none"
+            />
+          </g>
+        </svg>
       </div>
       <div class="loader-scene-glow" />
     </div>
@@ -54,15 +86,35 @@
 import { mainStore } from "@/store";
 import loadingBg from "@/assets/images/background-kame-clean.png";
 import gokuSprite from "@/assets/images/goku-nimbus.png";
+import {
+  GOKU_FINAL_X,
+  GOKU_FINAL_Y,
+  GOKU_FLIGHT_PATH,
+  GOKU_SCENE_HEIGHT,
+  GOKU_SCENE_WIDTH,
+  GOKU_SPRITE_HEIGHT,
+  GOKU_SPRITE_WIDTH,
+} from "@/utils/gokuFlightPath.js";
 
 const store = mainStore();
 const siteName = import.meta.env.VITE_SITE_NAME || "MAP7E";
 const emit = defineEmits(["curtainOpen"]);
 const flightActive = ref(false);
+const flightStarted = ref(false);
+const flightSettled = ref(false);
 const curtainOpen = ref(false);
 const spriteReady = ref(false);
 const spriteFailed = ref(false);
+const flightPathRef = ref(null);
+const flightTrailRef = ref(null);
+const flightRiderRef = ref(null);
 let flightFallbackTimer = null;
+let flightFrameId = 0;
+let pathLength = 0;
+let flightStartLength = 0;
+let flightStartTime = 0;
+let flightDuration = 3100;
+let lastRiderAngle = null;
 
 const openCurtain = () => {
   if (curtainOpen.value) return;
@@ -71,9 +123,102 @@ const openCurtain = () => {
   emit("curtainOpen");
 };
 
-const finishFlight = (event) => {
-  // Vue scoped CSS adds a hash suffix to keyframe names in the built CSS.
-  if (event.animationName.startsWith("goku-flight")) openCurtain();
+const setFlightProgress = (progress) => {
+  const path = flightPathRef.value;
+  const trail = flightTrailRef.value;
+  const rider = flightRiderRef.value;
+  if (!path || !trail || !rider || !pathLength) return;
+
+  const distance = flightStartLength + (pathLength - flightStartLength) * progress;
+  const point = path.getPointAtLength(distance);
+  const before = path.getPointAtLength(Math.max(flightStartLength, distance - 3));
+  const after = path.getPointAtLength(Math.min(pathLength, distance + 3));
+  let angle = (Math.atan2(after.y - before.y, after.x - before.x) * 180) / Math.PI;
+
+  // Keep the tangent continuous across the SVG angle wrap, so turns never
+  // become an accidental full spin.
+  if (lastRiderAngle !== null) {
+    while (angle - lastRiderAngle > 180) angle -= 360;
+    while (angle - lastRiderAngle < -180) angle += 360;
+  }
+  lastRiderAngle = angle;
+
+  const scale = 0.82 + 0.18 * progress;
+  const riderX = progress === 1 ? GOKU_FINAL_X : point.x;
+  const riderY = progress === 1 ? GOKU_FINAL_Y : point.y;
+  rider.setAttribute(
+    "transform",
+    `translate(${riderX} ${riderY}) rotate(${angle}) scale(${scale})`,
+  );
+  trail.style.strokeDashoffset = `${Math.max(0, pathLength - distance)}`;
+};
+
+const findVisiblePathStart = (path, length) => {
+  const art = document.querySelector(".loader-scene-art");
+  if (!art) return 0;
+
+  const rect = art.getBoundingClientRect();
+  const leftEdge = Math.max(0, ((0 - rect.left) / rect.width) * GOKU_SCENE_WIDTH);
+  const targetX = Math.max(0, leftEdge - GOKU_SPRITE_WIDTH / 2);
+  if (targetX <= 0) return 0;
+
+  const visibleTop = Math.max(0, ((0 - rect.top) / rect.height) * GOKU_SCENE_HEIGHT);
+  const visibleBottom = Math.min(
+    GOKU_SCENE_HEIGHT,
+    ((window.innerHeight - rect.top) / rect.height) * GOKU_SCENE_HEIGHT,
+  );
+
+  for (let distance = 0; distance <= length; distance += 4) {
+    const point = path.getPointAtLength(distance);
+    if (point.x >= targetX && point.y >= visibleTop && point.y <= visibleBottom) {
+      return distance;
+    }
+  }
+  return 0;
+};
+
+const finishFlight = () => {
+  if (flightSettled.value) return;
+  if (flightFrameId) cancelAnimationFrame(flightFrameId);
+  setFlightProgress(1);
+  flightSettled.value = true;
+  openCurtain();
+};
+
+const beginFlight = async () => {
+  if (flightActive.value) return;
+  flightActive.value = true;
+  flightDuration =
+    window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 450 : 3100;
+
+  await nextTick();
+  const path = flightPathRef.value;
+  const trail = flightTrailRef.value;
+  if (!path || !trail || typeof path.getTotalLength !== "function") {
+    finishFlight();
+    return;
+  }
+
+  pathLength = path.getTotalLength();
+  flightStartLength = findVisiblePathStart(path, pathLength);
+  lastRiderAngle = null;
+  trail.style.strokeDasharray = `${pathLength} ${pathLength}`;
+  trail.style.strokeDashoffset = `${pathLength - flightStartLength}`;
+  flightStarted.value = true;
+  trail.classList.add("is-visible");
+  setFlightProgress(0);
+  flightStartTime = performance.now();
+
+  const tick = (now) => {
+    const elapsed = Math.min(1, (now - flightStartTime) / flightDuration);
+    // Ease the takeoff and landing while keeping the drawn line locked to the
+    // rider's exact path distance.
+    const progress = elapsed * elapsed * (3 - 2 * elapsed);
+    setFlightProgress(progress);
+    if (elapsed >= 1) finishFlight();
+    else flightFrameId = requestAnimationFrame(tick);
+  };
+  flightFrameId = requestAnimationFrame(tick);
 };
 
 watch(
@@ -82,15 +227,19 @@ watch(
     if (!ready) return;
     if (failed) openCurtain();
     else if (spriteLoaded && !flightActive.value) {
-      flightActive.value = true;
-      // Animation events can be dropped when a mobile tab is suspended.
-      flightFallbackTimer = setTimeout(openCurtain, 3450);
+      beginFlight();
+      // If iOS suspends requestAnimationFrame mid-flight, land cleanly before
+      // opening the existing curtain sequence.
+      flightFallbackTimer = setTimeout(finishFlight, 3600);
     }
   },
   { immediate: true },
 );
 
-onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
+onBeforeUnmount(() => {
+  clearTimeout(flightFallbackTimer);
+  if (flightFrameId) cancelAnimationFrame(flightFrameId);
+});
 </script>
 
 <style lang="scss" scoped>
@@ -139,28 +288,90 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
       height: 100%;
     }
 
-    .loader-goku {
+    .loader-sprite-preload {
       position: absolute;
-      left: 58.6%;
-      top: 47.5%;
-      width: 8.6%;
-      height: auto;
+      width: 1px;
+      height: 1px;
       opacity: 0;
-      transform: translateZ(0);
-      transform-origin: 42% 70%;
-      backface-visibility: hidden;
-      will-change: left, top, transform;
+      visibility: hidden;
+      pointer-events: none;
+    }
 
-      &.is-flying {
-        animation: goku-flight 3.1s linear both;
+    .loader-flight-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+
+      .flight-trail {
+        opacity: 0;
+
+        path {
+          fill: none;
+          stroke-dasharray: inherit;
+          stroke-dashoffset: inherit;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+        }
+
+        .trail-glow {
+          stroke: #ffc928;
+          stroke-width: 54;
+          opacity: 0.28;
+        }
+
+        .trail-body {
+          stroke: #ffe242;
+          stroke-width: 20;
+          opacity: 0.96;
+        }
+
+        .trail-core {
+          stroke: #fff88a;
+          stroke-width: 7;
+        }
+
+        &.is-visible {
+          opacity: 1;
+        }
+      }
+
+      .flight-rider,
+      .settled-rider {
+        transition: opacity 0.16s ease;
+      }
+
+      .flight-rider {
+        opacity: 0;
+        transform-box: view-box;
+        transform-origin: 0 0;
+      }
+
+      &.flight-started .flight-rider {
+        opacity: 1;
+      }
+
+      .settled-rider {
+        opacity: 0;
+      }
+
+      &.settled {
+        .flight-rider {
+          opacity: 0;
+        }
+
+        .settled-rider {
+          opacity: 1;
+        }
       }
     }
 
     .loader-scene-glow {
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(
+      background: radial-gradient(
           circle at 50% 48%,
           rgba(255, 239, 185, 0.25) 0%,
           rgba(255, 225, 155, 0.1) 24%,
@@ -193,8 +404,7 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
       position: relative;
       width: 104px;
       height: 104px;
-      filter:
-        drop-shadow(0 0 10px rgba(255, 244, 199, 0.95))
+      filter: drop-shadow(0 0 10px rgba(255, 244, 199, 0.95))
         drop-shadow(0 6px 18px rgba(34, 52, 78, 0.18));
 
       .loader-ring {
@@ -300,8 +510,7 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
       border-radius: 48% 44% 52% 46%;
       opacity: 0.98;
       filter: blur(12px);
-      background:
-        radial-gradient(circle at 62% 13%, rgba(255, 246, 171, 0.96), transparent 30%),
+      background: radial-gradient(circle at 62% 13%, rgba(255, 246, 171, 0.96), transparent 30%),
         radial-gradient(circle at 52% 38%, rgba(255, 220, 92, 0.98), transparent 38%),
         radial-gradient(circle at 58% 69%, rgba(250, 178, 55, 0.96), transparent 43%),
         linear-gradient(90deg, #ef9830 0%, #ffc847 42%, #ffe477 78%, #fff0a0 100%);
@@ -332,8 +541,7 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
       width: clamp(170px, 25vw, 310px);
       aspect-ratio: 1.32;
       border-radius: 52% 48% 46% 54% / 58% 52% 48% 42%;
-      background:
-        radial-gradient(circle at 30% 29%, var(--gold-1) 0 12%, transparent 13%),
+      background: radial-gradient(circle at 30% 29%, var(--gold-1) 0 12%, transparent 13%),
         radial-gradient(circle at 51% 24%, var(--gold-2) 0 20%, transparent 21%),
         radial-gradient(circle at 72% 38%, #ffd45a 0 20%, transparent 21%),
         radial-gradient(circle at 30% 60%, #ffd65b 0 25%, transparent 26%),
@@ -351,8 +559,12 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
         position: absolute;
         inset: 12% 13%;
         border-radius: 50%;
-        background:
-          radial-gradient(circle at 50% 50%, transparent 0 19%, rgba(232, 145, 45, 0.18) 20% 27%, transparent 28%),
+        background: radial-gradient(
+            circle at 50% 50%,
+            transparent 0 19%,
+            rgba(232, 145, 45, 0.18) 20% 27%,
+            transparent 28%
+          ),
           conic-gradient(
             from 26deg at 50% 50%,
             transparent 0deg 198deg,
@@ -382,8 +594,7 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
         position: absolute;
         inset: 0;
         border-radius: inherit;
-        background:
-          radial-gradient(circle at 24% 25%, rgba(255, 255, 211, 0.38), transparent 25%),
+        background: radial-gradient(circle at 24% 25%, rgba(255, 255, 211, 0.38), transparent 25%),
           radial-gradient(circle at 66% 28%, rgba(255, 247, 180, 0.25), transparent 30%);
         mix-blend-mode: screen;
       }
@@ -504,59 +715,13 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
   }
 }
 
-@keyframes goku-flight {
-  0% {
-    left: -8.2%;
-    top: 33%;
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(0.78) rotate(-8deg);
-  }
-  20% {
-    left: 12.6%;
-    top: 26.4%;
-    transform: translate3d(0, 0, 0) scale(0.88) rotate(-10deg);
-  }
-  45% {
-    left: 47.8%;
-    top: 17.7%;
-    transform: translate3d(0, 0, 0) scale(0.95) rotate(2deg);
-  }
-  60% {
-    left: 66%;
-    top: 18.75%;
-    transform: translate3d(0, 0, 0) scale(0.9) rotate(12deg);
-  }
-  70% {
-    left: 76.4%;
-    top: 26.1%;
-    transform: translate3d(0, 0, 0) scale(0.87) rotate(40deg);
-  }
-  78% {
-    left: 76.4%;
-    top: 31.7%;
-    transform: translate3d(0, 0, 0) scale(0.84) rotate(130deg);
-  }
-  88% {
-    left: 69.9%;
-    top: 39.1%;
-    transform: translate3d(0, 0, 0) scale(0.91) rotate(260deg);
-  }
-  96% {
-    left: 60.8%;
-    top: 45.1%;
-    transform: translate3d(0, 0, 0) scale(0.98) rotate(345deg);
-  }
-  100% {
-    left: 58.6%;
-    top: 47.5%;
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1) rotate(360deg);
-  }
-}
-
 @keyframes curtain-appear {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
@@ -685,57 +850,6 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
 }
 
 @media (max-width: 720px) {
-  // 竖屏只显示原图中部；从裁切后的可见左边缘进入，再沿原图轨迹绕行。
-  @keyframes goku-flight {
-    0% {
-      left: 32%;
-      top: 20.5%;
-      opacity: 1;
-      transform: translate3d(0, 0, 0) scale(0.78) rotate(-8deg);
-    }
-    25% {
-      left: 43%;
-      top: 19%;
-      transform: translate3d(0, 0, 0) scale(0.88) rotate(-6deg);
-    }
-    45% {
-      left: 53%;
-      top: 17.5%;
-      transform: translate3d(0, 0, 0) scale(0.95) rotate(2deg);
-    }
-    60% {
-      left: 66%;
-      top: 18.75%;
-      transform: translate3d(0, 0, 0) scale(0.9) rotate(12deg);
-    }
-    70% {
-      left: 76.4%;
-      top: 26.1%;
-      transform: translate3d(0, 0, 0) scale(0.87) rotate(40deg);
-    }
-    78% {
-      left: 76.4%;
-      top: 31.7%;
-      transform: translate3d(0, 0, 0) scale(0.84) rotate(130deg);
-    }
-    88% {
-      left: 69.9%;
-      top: 39.1%;
-      transform: translate3d(0, 0, 0) scale(0.91) rotate(260deg);
-    }
-    96% {
-      left: 60.8%;
-      top: 45.1%;
-      transform: translate3d(0, 0, 0) scale(0.98) rotate(345deg);
-    }
-    100% {
-      left: 58.6%;
-      top: 47.5%;
-      opacity: 1;
-      transform: translate3d(0, 0, 0) scale(1) rotate(360deg);
-    }
-  }
-
   #loader-wrapper {
     .loader {
       transform: translateY(-3vh);
@@ -815,9 +929,6 @@ onBeforeUnmount(() => clearTimeout(flightFallbackTimer));
 
 @media (prefers-reduced-motion: reduce) {
   #loader-wrapper {
-    .loader-goku.is-flying {
-      animation-duration: 0.01s !important;
-    }
     .loader-scene-image,
     .loader-ring,
     .cloud-knot {

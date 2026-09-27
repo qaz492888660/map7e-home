@@ -9,6 +9,17 @@
         @load="imgLoadComplete"
         @error.once="imgLoadError"
       />
+      <svg
+        v-if="bgUrl === localSceneBg && store.imgLoadStatus"
+        class="background-flight-trail"
+        viewBox="0 0 3840 2160"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path class="trail-glow" :d="GOKU_FLIGHT_PATH" />
+        <path class="trail-body" :d="GOKU_FLIGHT_PATH" />
+        <path class="trail-core" :d="GOKU_FLIGHT_PATH" />
+      </svg>
       <img
         v-if="bgUrl === localSceneBg && store.imgLoadStatus"
         class="goku"
@@ -25,6 +36,7 @@ import { mainStore } from "@/store";
 import { Error } from "@icon-park/vue-next";
 import localSceneBg from "@/assets/images/background-kame-clean.png";
 import gokuSprite from "@/assets/images/goku-nimbus.png";
+import { GOKU_FLIGHT_PATH } from "@/utils/gokuFlightPath.js";
 
 const props = defineProps({
   introReady: {
@@ -75,9 +87,12 @@ const changeBg = (type) => {
 };
 
 const imgLoadComplete = () => {
-  imgTimeout.value = setTimeout(() => {
-    store.setImgLoadStatus(true);
-  }, Math.floor(Math.random() * 301) + 300);
+  imgTimeout.value = setTimeout(
+    () => {
+      store.setImgLoadStatus(true);
+    },
+    Math.floor(Math.random() * 301) + 300,
+  );
 };
 
 watch(introReady, (ready) => {
@@ -140,6 +155,38 @@ onBeforeUnmount(() => {
       display: block;
       width: 100%;
       height: 100%;
+    }
+
+    .background-flight-trail {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+
+      path {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .trail-glow {
+        stroke: #ffc928;
+        stroke-width: 54;
+        opacity: 0.28;
+      }
+
+      .trail-body {
+        stroke: #ffe242;
+        stroke-width: 20;
+        opacity: 0.96;
+      }
+
+      .trail-core {
+        stroke: #fff88a;
+        stroke-width: 7;
+      }
     }
 
     .goku {
