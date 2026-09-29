@@ -65,6 +65,7 @@ import Box from "@/views/Box/index.vue";
 import MoreSet from "@/views/MoreSet/index.vue";
 import cursorInit from "@/utils/cursor.js";
 import config from "@/../package.json";
+import { inject } from "@vercel/analytics";
 
 const store = mainStore();
 let backgroundRevealTimer = null;
@@ -138,6 +139,9 @@ const previewBackground = () => {
 };
 
 onMounted(() => {
+  // Vercel Analytics
+  inject();
+
   // 自定义鼠标
   cursorInit();
 

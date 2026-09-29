@@ -254,7 +254,8 @@ const onTimeUp = () => {
   }
   const currentLrcElement = playerRef.querySelector(".aplayer-lrc-current");
   const previousLrcElement = currentLrcElement?.previousElementSibling;
-  const lrcContent = currentLrcElement?.innerHTML || previousLrcElement?.innerHTML || "这句没有歌词";
+  const lrcContent =
+    currentLrcElement?.innerHTML || previousLrcElement?.innerHTML || "这句没有歌词";
   store.setPlayerLrc(lrcContent);
 };
 
